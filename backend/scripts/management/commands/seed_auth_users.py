@@ -1,0 +1,194 @@
+from django.core.management.base import BaseCommand
+from django.contrib.auth.models import User, Group
+from auth_module.models import UserProfile
+from asset_module.models import Vessel, WorkOrder
+from hse_module.hse_pob.models import WorkLocation
+from datetime import date, timedelta
+
+
+class Command(BaseCommand):
+    help = 'Seed complete HSE system data: users, profiles, work orders, and locations'
+
+    def handle(self, *args, **options):
+        self.stdout.write("=" * 60)
+        self.stdout.write("SAIPEM HSE - Complete Data Seeder")
+        self.stdout.write("=" * 60)
+
+        # STEP 1: Create groups
+        self.stdout.write('\n[1/5] Creating User Groups...')
+        groups_data = [
+            'Admin',
+            'HR Staff',
+            'Chief Engineer',
+            'Worker',
+            'Safety Officer',
+        ]
+
+        for group_name in groups_data:
+            Group.objects.get_or_create(name=group_name)
+            self.stdout.write(self.style.SUCCESS(f'✓ Group "{group_name}" created/exists'))
+
+        # STEP 2: Create test users with UserProfile data
+        self.stdout.write('\n[2/5] Creating Users and Profiles...')
+        test_users = [
+            {
+                'username': 'admin',
+                'password': 'admin123',
+                'email': 'admin@saipem.com',
+                'first_name': 'Admin',
+                'last_name': 'User',
+                'is_superuser': True,
+                'group': 'Admin',
+                'job_role': 'System Administrator',
+                'roster_status': 'ONBOARD'
+            },
+            {
+                'username': 'hr_staff',
+                'password': 'hr123',
+                'email': 'hr@saipem.com',
+                'first_name': 'HR',
+                'last_name': 'Staff',
+                'is_superuser': False,
+                'group': 'HR Staff',
+                'job_role': 'HR Manager',
+                'roster_status': 'ONBOARD'
+            },
+            {
+                'username': 'chief_engineer',
+                'password': 'chief123',
+                'email': 'chief@saipem.com',
+                'first_name': 'Chief',
+                'last_name': 'Engineer',
+                'is_superuser': False,
+                'group': 'Chief Engineer',
+                'job_role': 'Engineering Chief',
+                'roster_status': 'ONBOARD'
+            },
+            {
+                'username': 'worker',
+                'password': 'worker123',
+                'email': 'worker@saipem.com',
+                'first_name': 'Field',
+                'last_name': 'Worker',
+                'is_superuser': False,
+                'group': 'Worker',
+                'job_role': 'Mechanical Technician',
+                'roster_status': 'ONBOARD'
+            },
+            {
+                'username': 'safety_officer',
+                'password': 'safety123',
+                'email': 'safety@saipem.com',
+                'first_name': 'Safety',
+                'last_name': 'Officer',
+                'is_superuser': False,
+                'group': 'Safety Officer',
+                'job_role': 'HSE Officer',
+                'roster_status': 'ONBOARD'
+            },
+        ]
+
+        for user_data in test_users:
+            username = user_data['username']
+            try:
+                user = User.objects.get(username=username)
+                self.stdout.write(self.style.WARNING(f'User {username} already exists'))
+            except User.DoesNotExist:
+                user = User.objects.create_user(
+                    username=user_data['username'],
+                    password=user_data['password'],
+                    email=user_data['email'],
+                    first_name=user_data['first_name'],
+                    last_name=user_data['last_name'],
+                    is_superuser=user_data['is_superuser']
+                )
+
+                # Assign user to group
+                group = Group.objects.get(name=user_data['group'])
+                user.groups.add(group)
+
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'✓ Created user {username} with group {user_data["group"]}'
+                    )
+                )
+
+            # Update UserProfile (auto-created by signal)
+            if hasattr(user, 'profile'):
+                user.profile.job_role = user_data['job_role']
+                user.profile.roster_status = user_data['roster_status']
+                user.profile.save()
+                self.stdout.write(
+                    self.style.SUCCESS(f'✓ Updated profile for {username}')
+                )
+
+        # STEP 3: Get or create default Vessel for Work Orders
+        self.stdout.write('\n[3/5] Ensuring default Vessel exists...')
+        default_vessel, created = Vessel.objects.get_or_create(
+            vessel_name='Saipem 7000',
+            defaults={
+                'vessel_type': 'Drill Ship',
+                'imo_number': 'IMO-7000-001',
+                'operational_status': 'OPERATIONAL',
+                'health_score': 95
+            }
+        )
+        if created:
+            self.stdout.write(self.style.SUCCESS(f'✓ Created default vessel: {default_vessel.vessel_name}'))
+        else:
+            self.stdout.write(self.style.SUCCESS(f'✓ Using existing vessel: {default_vessel.vessel_name}'))
+
+        # STEP 4: Create Work Orders (linked to Vessel)
+        self.stdout.write('\n[4/5] Creating Work Orders...')
+        work_orders_data = [
+            {'wo_id': 'WO-2024-001', 'description': 'Engine Room Maintenance - Routine inspection and lubrication', 'scheduled_date': date.today() + timedelta(days=1), 'status': 'PENDING'},
+            {'wo_id': 'WO-2024-002', 'description': 'Deck Painting - Starboard side weather deck coating', 'scheduled_date': date.today() + timedelta(days=2), 'status': 'PENDING'},
+            {'wo_id': 'WO-2024-003', 'description': 'Confined Space Entry - Ballast tank inspection', 'scheduled_date': date.today() + timedelta(days=3), 'status': 'PENDING'},
+            {'wo_id': 'WO-2024-004', 'description': 'Hot Work - Welding repair on main deck structure', 'scheduled_date': date.today() + timedelta(days=1), 'status': 'IN_PROGRESS'},
+            {'wo_id': 'WO-2024-005', 'description': 'Working at Height - Mast antenna installation', 'scheduled_date': date.today(), 'status': 'IN_PROGRESS'},
+            {'wo_id': 'WO-2024-006', 'description': 'Electrical Isolation - Generator switchboard maintenance', 'scheduled_date': date.today() + timedelta(days=5), 'status': 'PENDING'},
+            {'wo_id': 'WO-2024-007', 'description': 'Scaffolding Erection - Access to upper deck equipment', 'scheduled_date': date.today() + timedelta(days=4), 'status': 'PENDING'},
+            {'wo_id': 'WO-2024-008', 'description': 'Main Crane Inspection - Load testing and certification', 'scheduled_date': date.today() + timedelta(days=6), 'status': 'PENDING'},
+            {'wo_id': 'WO-2024-009', 'description': 'Diesel Generator Overhaul - Oil change and filter replacement', 'scheduled_date': date.today() + timedelta(days=7), 'status': 'PENDING'},
+            {'wo_id': 'WO-2024-010', 'description': 'Helideck Safety Net Replacement - Inspection and maintenance', 'scheduled_date': date.today() + timedelta(days=3), 'status': 'PENDING'},
+        ]
+
+        for wo_data in work_orders_data:
+            work_order, created = WorkOrder.objects.get_or_create(
+                wo_id=wo_data['wo_id'],
+                defaults={
+                    'vessel': default_vessel,
+                    'description': wo_data['description'],
+                    'scheduled_date': wo_data['scheduled_date'],
+                    'status': wo_data['status'],
+                    'created_by': 'System'
+                }
+            )
+            if created:
+                self.stdout.write(f"✓ Created work order: {work_order.wo_id}")
+            else:
+                self.stdout.write(f"- Work order already exists: {work_order.wo_id}")
+
+        # STEP 5: Create Work Locations (Deck Locations - linked to Vessel)
+        self.stdout.write('\n[5/5] Creating Deck Locations...')
+        locations_data = [
+            {'deck_name': 'Main Deck', 'risk_level': 'MEDIUM'},
+            {'deck_name': 'Engine Room', 'risk_level': 'HIGH'},
+            {'deck_name': 'Heli Deck', 'risk_level': 'MEDIUM'},
+            {'deck_name': 'Lower Deck', 'risk_level': 'LOW'},
+            {'deck_name': 'Upper Deck', 'risk_level': 'MEDIUM'},
+            {'deck_name': 'Machinery Space', 'risk_level': 'HIGH'},
+        ]
+
+        for loc_data in locations_data:
+            location, created = WorkLocation.objects.get_or_create(
+                vessel=default_vessel,
+                deck_name=loc_data['deck_name'],
+                defaults={'risk_level': loc_data['risk_level']}
+            )
+            if created:
+                self.stdout.write(f"✓ Created deck location: {location.deck_name} (Risk: {location.risk_level})")
+            else:
+                self.stdout.write(f"- Deck location already exists: {location.deck_name}")
+
+        self.stdout.write(self.style.SUCCESS('\n✓ All data seeded successfully!'))

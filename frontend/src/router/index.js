@@ -1,0 +1,148 @@
+import { createRouter, createWebHistory } from 'vue-router';
+import { checkAuth, authState } from '@/store/auth';
+
+const routes = [
+    {
+        path: '/',
+        name: 'Dashboard',
+        component: () => import('@/views/AdminDashboardView.vue'),
+        meta: { requiresAuth: true, requiredRole: 'Admin' }
+    },
+    {
+        path: '/login',
+        name: 'Login',
+        component: () => import('@/views/LoginView.vue'),
+        meta: { requiresGuest: true }
+    },
+    // HSE Module Routes
+    {
+        path: '/hse',
+        name: 'HSEDashboard',
+        component: () => import('@/views/DashboardView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/hse/live-pob',
+        name: 'LivePob',
+        component: () => import('@/views/LivePobView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/hse/ptw',
+        name: 'Ptw',
+        component: () => import('@/views/PtwView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/hse/incidents',
+        name: 'Incidents',
+        component: () => import('@/views/IncidentsView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/offshore/locations',
+        name: 'WorkLocation',
+        component: () => import('@/views/WorkLocationView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/hse/analytics',
+        name: 'Analytics',
+        component: () => import('@/views/AnalyticsView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/hse/permit-print/:id',
+        name: 'PermitPrint',
+        component: () => import('@/views/PermitPrintView.vue'),
+        meta: { requiresAuth: true }
+    },
+    // HR Module Routes
+    {
+        path: '/hr/personnel',
+        name: 'HRPersonnel',
+        component: () => import('@/views/hr/PersonnelView.vue'),
+        meta: { requiresAuth: true, requiredModule: 'hr' }
+    },
+    {
+        path: '/hr/roster',
+        name: 'HRRoster',
+        component: () => import('@/views/hr/RosterView.vue'),
+        meta: { requiresAuth: true, requiredModule: 'hr' }
+    },
+    {
+        path: '/hr/payroll',
+        name: 'HRPayroll',
+        component: () => import('@/views/hr/PayrollView.vue'),
+        meta: { requiresAuth: true, requiredModule: 'hr' }
+    },
+    // Offshore Routes
+    {
+        path: '/offshore/vessels',
+        name: 'VesselRegistry',
+        component: () => import('@/views/admin/VesselRegistryView.vue'),
+        meta: { requiresAuth: true, requiredRole: 'Admin' }
+    },
+    // Asset Module Routes
+    {
+        path: '/assets',
+        name: 'Assets',
+        component: () => import('@/views/AssetsView.vue'),
+        meta: { requiresAuth: true, requiredModule: 'asset' }
+    }
+];
+
+const router = createRouter({
+    history: createWebHistory(import.meta.env.BASE_URL),
+    routes
+});
+
+router.beforeEach(async (to, from, next) => {
+    // If auth state is not checked yet (e.g. initial load), check it
+    if (authState.isAuthChecking) {
+        await checkAuth();
+    }
+
+    const isAuthenticated = authState.isLoggedIn;
+
+    if (to.meta.requiresAuth && !isAuthenticated) {
+        next('/login');
+    } else if (to.meta.requiresGuest && isAuthenticated) {
+        // Redirect authenticated users to their home page based on role
+        if (authState.userRole === 'Admin') {
+            next('/');
+        } else {
+            next('/hse');
+        }
+    } else if (to.meta.requiredModule) {
+        // Check if user has access to the required module
+        const hasAccess = authState.accessibleModules &&
+                         authState.accessibleModules.includes(to.meta.requiredModule);
+        if (!hasAccess) {
+            // Redirect to home page based on role
+            if (authState.userRole === 'Admin') {
+                next('/');
+            } else {
+                next('/hse');
+            }
+        } else {
+            next();
+        }
+    } else if (to.meta.requiredRole) {
+        // Check if user has the required role
+        if (authState.userRole !== to.meta.requiredRole) {
+            // Redirect to home page based on role
+            if (authState.userRole === 'Admin') {
+                next('/');
+            } else {
+                next('/hse');
+            }
+        } else {
+            next();
+        }
+    } else {
+        next();
+    }
+});
+
+export default router;
