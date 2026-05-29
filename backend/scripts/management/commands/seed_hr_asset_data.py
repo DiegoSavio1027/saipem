@@ -453,7 +453,8 @@ class Command(BaseCommand):
         for task_data in maintenance_data:
             try:
                 vessel = vessels[task_data['vessel_name']]
-                assigned_crew = Employee.objects.get(emp_id=task_data['assigned_crew_id'])
+                # assigned_crew field temporarily removed to break circular dependency
+                # assigned_crew = Employee.objects.get(emp_id=task_data['assigned_crew_id'])
 
                 task, created = MaintenanceTask.objects.get_or_create(
                     task_id=task_data['task_id'],
@@ -463,7 +464,7 @@ class Command(BaseCommand):
                         'scheduled_date': task_data['scheduled_date'],
                         'status': task_data['status'],
                         'priority': task_data['priority'],
-                        'assigned_crew': assigned_crew
+                        # 'assigned_crew': assigned_crew  # Will be added back in a later migration
                     }
                 )
                 if created:

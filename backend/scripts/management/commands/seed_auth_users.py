@@ -182,13 +182,17 @@ class Command(BaseCommand):
 
         for loc_data in locations_data:
             location, created = WorkLocation.objects.get_or_create(
-                vessel=default_vessel,
                 deck_name=loc_data['deck_name'],
                 defaults={'risk_level': loc_data['risk_level']}
             )
             if created:
                 self.stdout.write(f"✓ Created deck location: {location.deck_name} (Risk: {location.risk_level})")
+                # Assign the location to the default vessel
+                default_vessel.assigned_decks.add(location)
             else:
                 self.stdout.write(f"- Deck location already exists: {location.deck_name}")
+                # Ensure it's assigned to the default vessel
+                if location not in default_vessel.assigned_decks.all():
+                    default_vessel.assigned_decks.add(location)
 
         self.stdout.write(self.style.SUCCESS('\n✓ All data seeded successfully!'))
