@@ -9,9 +9,25 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('hse_pob', '0001_initial'),
     ]
 
     operations = [
+        # Create Vessel FIRST (no dependencies)
+        migrations.CreateModel(
+            name='Vessel',
+            fields=[
+                ('id', models.AutoField(primary_key=True, serialize=False)),
+                ('vessel_name', models.CharField(max_length=100, unique=True)),
+                ('vessel_type', models.CharField(max_length=100)),
+                ('imo_number', models.CharField(blank=True, max_length=50, null=True, unique=True)),
+                ('operational_status', models.CharField(choices=[('OPERATIONAL', 'Operational'), ('MAINTENANCE', 'Under Maintenance'), ('CRITICAL', 'Critical'), ('INACTIVE', 'Inactive')], default='OPERATIONAL', max_length=50)),
+                ('health_score', models.IntegerField(default=100)),
+                ('last_inspected', models.DateField(auto_now=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+            ],
+        ),
+        # Create Asset (depends on Vessel)
         migrations.CreateModel(
             name='Asset',
             fields=[
@@ -26,17 +42,7 @@ class Migration(migrations.Migration):
                 ('assigned_decks', models.ManyToManyField(blank=True, related_name='assigned_vessels', to='hse_pob.worklocation')),
             ],
         ),
-        migrations.CreateModel(
-            name='InventoryItem',
-            fields=[
-                ('item_code', models.CharField(max_length=50, primary_key=True, serialize=False)),
-                ('item_name', models.CharField(max_length=100)),
-                ('category', models.CharField(default='Spare Part', max_length=100)),
-                ('current_stock', models.IntegerField(default=0)),
-                ('minimum_stock', models.IntegerField(default=10)),
-                ('asset_location', models.ForeignKey(blank=True, null=True, on_delete=models.CASCADE, related_name='inventory', to='asset_module.asset')),
-            ],
-        ),
+        # Create MachineryEquipment (depends on Vessel)
         migrations.CreateModel(
             name='MachineryEquipment',
             fields=[
@@ -52,21 +58,7 @@ class Migration(migrations.Migration):
                 ('vessel', models.ForeignKey(on_delete=models.CASCADE, related_name='machinery_equipment', to='asset_module.vessel')),
             ],
         ),
-        migrations.CreateModel(
-            name='MaintenanceTask',
-            fields=[
-                ('task_id', models.CharField(max_length=50, primary_key=True, serialize=False)),
-                ('description', models.TextField()),
-                ('priority', models.CharField(choices=[('LOW', 'Low'), ('MEDIUM', 'Medium'), ('HIGH', 'High'), ('CRITICAL', 'Critical')], default='MEDIUM', max_length=50)),
-                ('scheduled_date', models.DateField()),
-                ('status', models.CharField(choices=[('PENDING', 'Pending'), ('IN_PROGRESS', 'In Progress'), ('COMPLETED', 'Completed')], default='PENDING', max_length=50)),
-                ('completion_date', models.DateField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('vessel', models.ForeignKey(blank=True, null=True, on_delete=models.CASCADE, related_name='maintenance_tasks', to='asset_module.vessel')),
-                ('equipment', models.ForeignKey(blank=True, null=True, on_delete=models.CASCADE, related_name='maintenance_tasks', to='asset_module.machineryequipment')),
-                ('wo_id', models.ForeignKey(blank=True, null=True, on_delete=models.SET_NULL, related_name='maintenance_tasks', to='asset_module.workorder')),
-            ],
-        ),
+        # Create SparePart (depends on Vessel)
         migrations.CreateModel(
             name='SparePart',
             fields=[
@@ -81,19 +73,7 @@ class Migration(migrations.Migration):
                 ('vessel', models.ForeignKey(on_delete=models.CASCADE, related_name='spare_parts', to='asset_module.vessel')),
             ],
         ),
-        migrations.CreateModel(
-            name='Vessel',
-            fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('vessel_name', models.CharField(max_length=100, unique=True)),
-                ('vessel_type', models.CharField(max_length=100)),
-                ('imo_number', models.CharField(blank=True, max_length=50, null=True, unique=True)),
-                ('operational_status', models.CharField(choices=[('OPERATIONAL', 'Operational'), ('MAINTENANCE', 'Under Maintenance'), ('CRITICAL', 'Critical'), ('INACTIVE', 'Inactive')], default='OPERATIONAL', max_length=50)),
-                ('health_score', models.IntegerField(default=100)),
-                ('last_inspected', models.DateField(auto_now=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-            ],
-        ),
+        # Create WorkOrder (depends on Vessel)
         migrations.CreateModel(
             name='WorkOrder',
             fields=[
@@ -106,6 +86,34 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('vessel', models.ForeignKey(on_delete=models.CASCADE, related_name='work_orders', to='asset_module.vessel')),
+            ],
+        ),
+        # Create InventoryItem (depends on Asset)
+        migrations.CreateModel(
+            name='InventoryItem',
+            fields=[
+                ('item_code', models.CharField(max_length=50, primary_key=True, serialize=False)),
+                ('item_name', models.CharField(max_length=100)),
+                ('category', models.CharField(default='Spare Part', max_length=100)),
+                ('current_stock', models.IntegerField(default=0)),
+                ('minimum_stock', models.IntegerField(default=10)),
+                ('asset_location', models.ForeignKey(blank=True, null=True, on_delete=models.CASCADE, related_name='inventory', to='asset_module.asset')),
+            ],
+        ),
+        # Create MaintenanceTask (depends on Vessel, MachineryEquipment, WorkOrder)
+        migrations.CreateModel(
+            name='MaintenanceTask',
+            fields=[
+                ('task_id', models.CharField(max_length=50, primary_key=True, serialize=False)),
+                ('description', models.TextField()),
+                ('priority', models.CharField(choices=[('LOW', 'Low'), ('MEDIUM', 'Medium'), ('HIGH', 'High'), ('CRITICAL', 'Critical')], default='MEDIUM', max_length=50)),
+                ('scheduled_date', models.DateField()),
+                ('status', models.CharField(choices=[('PENDING', 'Pending'), ('IN_PROGRESS', 'In Progress'), ('COMPLETED', 'Completed')], default='PENDING', max_length=50)),
+                ('completion_date', models.DateField(blank=True, null=True)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
+                ('vessel', models.ForeignKey(blank=True, null=True, on_delete=models.CASCADE, related_name='maintenance_tasks', to='asset_module.vessel')),
+                ('equipment', models.ForeignKey(blank=True, null=True, on_delete=models.CASCADE, related_name='maintenance_tasks', to='asset_module.machineryequipment')),
+                ('wo_id', models.ForeignKey(blank=True, null=True, on_delete=models.SET_NULL, related_name='maintenance_tasks', to='asset_module.workorder')),
             ],
         ),
     ]

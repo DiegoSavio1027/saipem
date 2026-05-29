@@ -49,7 +49,7 @@ class WorkOrderAdmin(admin.ModelAdmin):
 
 @admin.register(MaintenanceTask)
 class MaintenanceTaskAdmin(admin.ModelAdmin):
-    list_display = ['task_id', 'vessel', 'equipment', 'wo_id', 'priority', 'scheduled_date', 'status', 'assigned_crew']
+    list_display = ['task_id', 'vessel', 'equipment', 'wo_id', 'priority', 'scheduled_date', 'status']
     list_filter = ['status', 'priority', 'vessel', 'scheduled_date']
     search_fields = ['task_id', 'description']
     ordering = ['-created_at']

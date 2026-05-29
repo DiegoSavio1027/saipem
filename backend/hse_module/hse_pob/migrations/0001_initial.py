@@ -9,7 +9,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('hse_ptw', '0001_initial'),
     ]
 
     operations = [
@@ -33,7 +32,6 @@ class Migration(migrations.Migration):
                 ('emp_id', models.CharField(max_length=50, verbose_name='Employee ID')),
                 ('action', models.CharField(choices=[('IN', 'Check In'), ('OUT', 'Check Out')], max_length=3, verbose_name='Action')),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('ptw', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='hse_ptw.permittowork', verbose_name='Related PTW')),
                 ('deck_location', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='hse_pob.worklocation', verbose_name='Deck Location')),
             ],
             options={

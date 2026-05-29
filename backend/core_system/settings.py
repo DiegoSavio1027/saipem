@@ -105,16 +105,28 @@ WSGI_APPLICATION = 'core_system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'saipem_offshore_db'),
-        'USER': os.environ.get('DB_USER', 'pgadmin'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'pgadmin'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+# Support both SQLite and PostgreSQL based on DATABASE_ENGINE env var
+DATABASE_ENGINE = os.environ.get('DATABASE_ENGINE', 'django.db.backends.sqlite3')
+
+if DATABASE_ENGINE == 'django.db.backends.sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    # PostgreSQL configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'saipem_offshore_db'),
+            'USER': os.environ.get('DB_USER', 'pgadmin'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'pgadmin'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
 
 
 # Password validation

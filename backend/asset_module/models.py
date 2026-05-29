@@ -165,7 +165,7 @@ class MaintenanceTask(models.Model):
     priority = models.CharField(max_length=50, choices=PRIORITY_CHOICES, default="MEDIUM")
     scheduled_date = models.DateField()
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="PENDING")
-    assigned_crew = models.ForeignKey('hse_ptw.Employee', on_delete=models.SET_NULL, null=True, blank=True)
+    # assigned_crew field will be added in a later migration to avoid circular dependency
     completion_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
