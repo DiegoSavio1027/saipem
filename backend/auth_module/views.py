@@ -153,3 +153,17 @@ def dev_quick_login_accounts(request):
         "accounts": accounts,
         "note": "These credentials are for development only"
     }, status=status.HTTP_200_OK)
+
+
+from rest_framework import viewsets
+from .serializers import UserManageSerializer
+from .permissions import IsAdmin
+
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    CRUD API for User management (Admin-only)
+    """
+    queryset = User.objects.all().order_by('-id')
+    serializer_class = UserManageSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+

@@ -127,6 +127,8 @@ class WorkOrder(models.Model):
 
     wo_id = models.CharField(max_length=50, unique=True, primary_key=True)
     vessel = models.ForeignKey(Vessel, on_delete=models.CASCADE, related_name='work_orders')
+    asset = models.ForeignKey(Asset, on_delete=models.SET_NULL, null=True, blank=True, related_name='work_orders')
+    machinery = models.ForeignKey(MachineryEquipment, on_delete=models.SET_NULL, null=True, blank=True, related_name='work_orders')
     created_by = models.CharField(max_length=100)  # Chief Engineer
     description = models.TextField()
     priority = models.CharField(max_length=50, choices=PRIORITY_CHOICES, default='MEDIUM')

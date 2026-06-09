@@ -26,7 +26,11 @@ from .serializers import (
 def asset_list(request):
     """Get all assets or create new asset"""
     if request.method == 'GET':
-        assets = Asset.objects.all()
+        vessel_id = request.query_params.get('vessel_id')
+        if vessel_id:
+            assets = Asset.objects.filter(vessel_id=vessel_id)
+        else:
+            assets = Asset.objects.all()
         serializer = AssetSerializer(assets, many=True)
         return Response(serializer.data)
 
@@ -70,7 +74,11 @@ def asset_detail(request, asset_id):
 def machinery_list(request):
     """Get all machinery equipment or create new equipment"""
     if request.method == 'GET':
-        machinery = MachineryEquipment.objects.all()
+        vessel_id = request.query_params.get('vessel_id')
+        if vessel_id:
+            machinery = MachineryEquipment.objects.filter(vessel_id=vessel_id)
+        else:
+            machinery = MachineryEquipment.objects.all()
         serializer = MachineryEquipmentSerializer(machinery, many=True)
         return Response(serializer.data)
 
@@ -158,7 +166,11 @@ def sparepart_detail(request, pk):
 def workorder_list(request):
     """Get all work orders or create new work order"""
     if request.method == 'GET':
-        workorders = WorkOrder.objects.all()
+        vessel_id = request.query_params.get('vessel_id')
+        if vessel_id:
+            workorders = WorkOrder.objects.filter(vessel_id=vessel_id)
+        else:
+            workorders = WorkOrder.objects.all()
         serializer = WorkOrderSerializer(workorders, many=True)
         return Response(serializer.data)
 

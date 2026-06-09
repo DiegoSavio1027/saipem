@@ -52,7 +52,7 @@ class IncidentSerializer(serializers.ModelSerializer):
         if not obj.reported_by:
             return "Unknown"
 
-        from ..hse_ptw.models import Employee
+        from hr_module.models import Employee
         try:
             employee = Employee.objects.get(emp_id=obj.reported_by)
             return employee.full_name
@@ -117,7 +117,7 @@ class StatusOverrideDetailedSerializer(serializers.ModelSerializer):
         if not obj.changed_by:
             return "Unknown"
 
-        from ..hse_ptw.models import Employee
+        from hr_module.models import Employee
         try:
             employee = Employee.objects.get(emp_id=obj.changed_by)
             return employee.full_name
@@ -166,7 +166,7 @@ class IncidentReportSerializer(serializers.Serializer):
         validated_data['location'] = location
 
         # Determine initial status based on reporter role
-        from ..hse_ptw.models import Employee
+        from hr_module.models import Employee
         reporter_emp_id = validated_data.get('reported_by')
         initial_status = 'OPEN'
 

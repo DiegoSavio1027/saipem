@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from datetime import date
-from hse_module.hse_ptw.models import Employee
-from asset_module.models import Vessel, Asset, MaintenanceTask, InventoryItem
+from hr_module.models import Employee
+from asset_module.models import Vessel, Asset, MaintenanceTask, InventoryItem, MachineryEquipment
 from hr_module.models import Roster, VesselActivity, Position
 
 
@@ -140,26 +140,88 @@ class Command(BaseCommand):
         # STEP 3: Create Assets (linked to Vessels)
         self.stdout.write("\n[3/8] Creating Assets (Equipment on Vessels)...")
         assets_data = [
+            # Saipem 7000
             {
                 'asset_id': 'AST-001',
                 'vessel_name': 'Saipem 7000',
                 'name': 'Main Crane',
                 'capacity': '500 Ton',
-                'status': 'OPERATIONAL'
+                'status': 'OPERATIONAL',
+                'health_score': 95
             },
+            {
+                'asset_id': 'AST-004',
+                'vessel_name': 'Saipem 7000',
+                'name': 'Helideck Safety System',
+                'capacity': 'Standard',
+                'status': 'CRITICAL',
+                'health_score': 30
+            },
+            {
+                'asset_id': 'AST-005',
+                'vessel_name': 'Saipem 7000',
+                'name': 'Pipe Laying Tensioner',
+                'capacity': '250 Ton',
+                'status': 'MAINTENANCE',
+                'health_score': 75
+            },
+            {
+                'asset_id': 'AST-006',
+                'vessel_name': 'Saipem 7000',
+                'name': 'Lifeboat Station A',
+                'capacity': '50 Pax',
+                'status': 'OPERATIONAL',
+                'health_score': 100
+            },
+            # Castorone
             {
                 'asset_id': 'AST-002',
                 'vessel_name': 'Castorone',
                 'name': 'Auxiliary Crane',
                 'capacity': '300 Ton',
-                'status': 'OPERATIONAL'
+                'status': 'OPERATIONAL',
+                'health_score': 92
             },
+            {
+                'asset_id': 'AST-007',
+                'vessel_name': 'Castorone',
+                'name': 'Stinger Control System',
+                'capacity': 'Standard',
+                'status': 'CRITICAL',
+                'health_score': 20
+            },
+            {
+                'asset_id': 'AST-008',
+                'vessel_name': 'Castorone',
+                'name': 'Ballast Control Console',
+                'capacity': 'Standard',
+                'status': 'OPERATIONAL',
+                'health_score': 98
+            },
+            # Scarabeo 8
             {
                 'asset_id': 'AST-003',
                 'vessel_name': 'Scarabeo 8',
                 'name': 'Drilling Equipment',
                 'capacity': '150 Ton',
-                'status': 'OPERATIONAL'
+                'status': 'OPERATIONAL',
+                'health_score': 90
+            },
+            {
+                'asset_id': 'AST-009',
+                'vessel_name': 'Scarabeo 8',
+                'name': 'Blowout Preventer (BOP)',
+                'capacity': '10k PSI',
+                'status': 'CRITICAL',
+                'health_score': 15
+            },
+            {
+                'asset_id': 'AST-010',
+                'vessel_name': 'Scarabeo 8',
+                'name': 'Top Drive System',
+                'capacity': '800 HP',
+                'status': 'MAINTENANCE',
+                'health_score': 60
             }
         ]
 
@@ -167,20 +229,21 @@ class Command(BaseCommand):
         for asset_data in assets_data:
             try:
                 vessel = vessels[asset_data['vessel_name']]
-                asset, created = Asset.objects.get_or_create(
+                asset, created = Asset.objects.update_or_create(
                     asset_id=asset_data['asset_id'],
                     defaults={
                         'vessel': vessel,
                         'name': asset_data['name'],
                         'capacity': asset_data['capacity'],
-                        'status': asset_data['status']
+                        'status': asset_data['status'],
+                        'health_score': asset_data['health_score']
                     }
                 )
                 assets[asset_data['asset_id']] = asset
                 if created:
                     self.stdout.write(f"✓ Created asset: {asset.asset_id} - {asset.name} on {vessel.vessel_name}")
                 else:
-                    self.stdout.write(f"- Asset already exists: {asset.asset_id}")
+                    self.stdout.write(f"✓ Updated asset: {asset.asset_id} - {asset.name} on {vessel.vessel_name}")
             except KeyError:
                 self.stdout.write(self.style.WARNING(f"⚠ Vessel {asset_data['vessel_name']} not found for asset {asset_data['asset_id']}"))
 
@@ -476,6 +539,115 @@ class Command(BaseCommand):
 
         self.stdout.write(f"\n✓ Total maintenance tasks: {MaintenanceTask.objects.count()}")
 
+        # STEP 9: Create Machinery Equipment
+        self.stdout.write("\n[9/9] Creating Machinery Equipment (IoT Telemetry)...")
+        machinery_data = [
+            {
+                'vessel_name': 'Saipem 7000',
+                'equipment_name': 'Main Generator A',
+                'equipment_type': 'Generator',
+                'serial_number': 'GEN-S7000-001',
+                'installation_date': date(2022, 1, 15),
+                'operating_hours': 850,
+                'maintenance_interval_hours': 1000,
+                'last_maintenance_date': date(2025, 12, 1)
+            },
+            {
+                'vessel_name': 'Saipem 7000',
+                'equipment_name': 'Main Generator B',
+                'equipment_type': 'Generator',
+                'serial_number': 'GEN-S7000-002',
+                'installation_date': date(2022, 1, 15),
+                'operating_hours': 1050,  # OVERDUE! needs_maintenance = True
+                'maintenance_interval_hours': 1000,
+                'last_maintenance_date': date(2025, 11, 15)
+            },
+            {
+                'vessel_name': 'Saipem 7000',
+                'equipment_name': 'Main Ballast Pump 1',
+                'equipment_type': 'Pump',
+                'serial_number': 'PMP-S7000-001',
+                'installation_date': date(2023, 4, 10),
+                'operating_hours': 450,
+                'maintenance_interval_hours': 1200,
+                'last_maintenance_date': date(2026, 1, 10)
+            },
+            {
+                'vessel_name': 'Saipem 7000',
+                'equipment_name': 'Air Compressor A',
+                'equipment_type': 'Compressor',
+                'serial_number': 'CMP-S7000-001',
+                'installation_date': date(2023, 6, 20),
+                'operating_hours': 1220,  # OVERDUE! needs_maintenance = True
+                'maintenance_interval_hours': 1200,
+                'last_maintenance_date': date(2025, 12, 20)
+            },
+            {
+                'vessel_name': 'Castorone',
+                'equipment_name': 'Propulsion Thruster 1',
+                'equipment_type': 'Thruster',
+                'serial_number': 'THR-CAST-001',
+                'installation_date': date(2021, 9, 5),
+                'operating_hours': 920,
+                'maintenance_interval_hours': 1000,
+                'last_maintenance_date': date(2025, 10, 1)
+            },
+            {
+                'vessel_name': 'Castorone',
+                'equipment_name': 'Hydraulic Power Unit A',
+                'equipment_type': 'Hydraulic Unit',
+                'serial_number': 'HPU-CAST-001',
+                'installation_date': date(2022, 3, 12),
+                'operating_hours': 1580,  # OVERDUE! needs_maintenance = True
+                'maintenance_interval_hours': 1500,
+                'last_maintenance_date': date(2025, 9, 12)
+            },
+            {
+                'vessel_name': 'Scarabeo 8',
+                'equipment_name': 'Drill Mud Pump A',
+                'equipment_type': 'Pump',
+                'serial_number': 'PMP-SCAR-001',
+                'installation_date': date(2024, 2, 1),
+                'operating_hours': 200,
+                'maintenance_interval_hours': 1000,
+                'last_maintenance_date': date(2026, 2, 1)
+            },
+            {
+                'vessel_name': 'Scarabeo 8',
+                'equipment_name': 'Emergency Generator',
+                'equipment_type': 'Generator',
+                'serial_number': 'GEN-SCAR-003',
+                'installation_date': date(2023, 8, 14),
+                'operating_hours': 490,
+                'maintenance_interval_hours': 500,
+                'last_maintenance_date': date(2026, 1, 14)
+            }
+        ]
+
+        for mac_data in machinery_data:
+            try:
+                vessel = vessels[mac_data['vessel_name']]
+                mac, created = MachineryEquipment.objects.update_or_create(
+                    serial_number=mac_data['serial_number'],
+                    defaults={
+                        'vessel': vessel,
+                        'equipment_name': mac_data['equipment_name'],
+                        'equipment_type': mac_data['equipment_type'],
+                        'installation_date': mac_data['installation_date'],
+                        'operating_hours': mac_data['operating_hours'],
+                        'maintenance_interval_hours': mac_data['maintenance_interval_hours'],
+                        'last_maintenance_date': mac_data['last_maintenance_date']
+                    }
+                )
+                if created:
+                    self.stdout.write(f"✓ Created machinery: {mac.equipment_name} ({mac.serial_number}) on {vessel.vessel_name}")
+                else:
+                    self.stdout.write(f"✓ Updated machinery: {mac.equipment_name} ({mac.serial_number}) on {vessel.vessel_name}")
+            except KeyError:
+                self.stdout.write(self.style.WARNING(f"⚠ Vessel {mac_data['vessel_name']} not found for machinery {mac_data['serial_number']}"))
+
+        self.stdout.write(f"\n✓ Total machinery equipment: {MachineryEquipment.objects.count()}")
+
         # SUMMARY
         self.stdout.write("\n" + "=" * 70)
         self.stdout.write(self.style.SUCCESS("✅ SEEDING COMPLETE!"))
@@ -488,5 +660,6 @@ class Command(BaseCommand):
         self.stdout.write(f"✓ Vessel Activities: {VesselActivity.objects.count()}")
         self.stdout.write(f"✓ Inventory Items: {InventoryItem.objects.count()}")
         self.stdout.write(f"✓ Maintenance Tasks: {MaintenanceTask.objects.count()}")
+        self.stdout.write(f"✓ Machinery Equipment: {MachineryEquipment.objects.count()}")
         self.stdout.write("=" * 70)
         self.stdout.write(self.style.SUCCESS("🚀 Ready for testing!"))

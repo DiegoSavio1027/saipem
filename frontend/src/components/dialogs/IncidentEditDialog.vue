@@ -97,6 +97,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getAccessToken } from '@/store/auth';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -123,7 +124,11 @@ const formData = ref({
 
 const fetchEmployees = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/hse/employees/`, { credentials: 'include' });
+    const response = await fetch(`${API_BASE_URL}/hse/employees/`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
+    });
     if (response.ok) {
       employees.value = await response.json();
     }
@@ -170,9 +175,9 @@ const handleSubmit = async () => {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': getCsrfToken() || ''
+        'X-CSRFToken': getCsrfToken() || '',
+        'Authorization': `Bearer ${getAccessToken()}`
       },
-      credentials: 'include',
       body: JSON.stringify(payload)
     });
 

@@ -1,30 +1,6 @@
 from django.db import models
 
 # ============================================================================
-# EMPLOYEE MODEL (untuk linking dengan User)
-# ============================================================================
-
-class Employee(models.Model):
-    """Employee data - linked to Django User"""
-    ROSTER_STATUS_CHOICES = [
-        ('ONBOARD', 'On Board'),
-        ('OFFBOARD', 'Off Board'),
-    ]
-
-    emp_id = models.CharField(max_length=50, unique=True, primary_key=True)
-    full_name = models.CharField(max_length=100)
-    job_role = models.CharField(max_length=100)
-    roster_status = models.CharField(max_length=50, choices=ROSTER_STATUS_CHOICES)
-    email = models.EmailField(unique=True, null=True, blank=True)  # ← Add
-    mcu_expiry = models.DateField(null=True, blank=True)           # ← Add
-    mcu_status = models.CharField(max_length=50, default="PENDING") # ← Add
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.emp_id} - {self.full_name}"
-
-
-# ============================================================================
 # PERMIT TO WORK MODEL (UPDATED STRUCTURE)
 # ============================================================================
 
@@ -48,9 +24,10 @@ class PermitToWork(models.Model):
     # Basic Information
     permit_id = models.CharField(max_length=20, unique=True, help_text="Format: HW-270526-0001")
     vessel = models.ForeignKey('asset_module.Vessel', on_delete=models.PROTECT, related_name='ptws')
-    emp_id = models.CharField(max_length=50, verbose_name="Employee ID")
+    emp_id = models.CharField(max_length=50, verbose_name="Applicant ID")
+    assigned_personnel = models.ManyToManyField('hr_module.Employee', blank=True, related_name='assigned_ptws', verbose_name="Assigned Crew")
     wo_id = models.ForeignKey('asset_module.WorkOrder', on_delete=models.PROTECT, verbose_name="Work Order", related_name='ptws')
-    deck_location = models.CharField(max_length=100, blank=True, null=True, verbose_name="Work Location")
+    deck_location = models.ForeignKey('hse_pob.WorkLocation', on_delete=models.PROTECT, blank=True, null=True, verbose_name="Work Location", related_name="ptws")
     permit_type = models.CharField(max_length=50, choices=PERMIT_TYPE_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
 
@@ -66,6 +43,9 @@ class PermitToWork(models.Model):
 
     # Completion
     completion_notes = models.TextField(blank=True, null=True)
+
+    # Toolbox Talk
+    is_toolbox_talk_done = models.BooleanField(default=False)
 
     # Closing
     closed_by = models.CharField(max_length=100, blank=True, null=True)

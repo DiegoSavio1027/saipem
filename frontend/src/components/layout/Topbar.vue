@@ -30,10 +30,16 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-[var(--color-saipem-tertiary)]">
                         <path d="M2 21h20M4.5 18h15M6 13h12M8 9h8M10 5h4"/>
                     </svg>
-                    <span class="hidden sm:inline text-slate-900 dark:text-white">{{ authState.selectedVessel?.name || 'Select Vessel' }}</span>
+                    <span class="hidden sm:inline text-slate-900 dark:text-white">{{ authState.selectedVessel?.name || 'All Vessels' }}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-56">
+                <DropdownMenuItem @click="selectVessel(null)"
+                                  :class="!authState.selectedVessel
+                                    ? 'bg-orange-100 dark:bg-orange-900/30 text-[var(--color-saipem-tertiary)] font-semibold'
+                                    : ''">
+                    All Vessels
+                </DropdownMenuItem>
                 <DropdownMenuItem v-for="vessel in vessels" :key="vessel.asset_id"
                                   @click="selectVessel(vessel)"
                                   :class="authState.selectedVessel?.asset_id === vessel.asset_id

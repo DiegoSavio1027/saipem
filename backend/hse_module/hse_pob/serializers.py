@@ -8,6 +8,8 @@ class WorkLocationSerializer(serializers.ModelSerializer):
 
 class VesselWithDecksSerializer(serializers.Serializer):
     """Serializer untuk vessel dengan assigned decks"""
+    asset_id = serializers.IntegerField(source='id')
+    name = serializers.CharField(source='vessel_name')
     vessel_id = serializers.IntegerField(source='id')
     vessel_name = serializers.CharField()
     vessel_type = serializers.CharField()
@@ -24,7 +26,7 @@ class POBLogSerializer(serializers.ModelSerializer):
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
 
     def get_employee_name(self, obj):
-        from ..hse_ptw.models import Employee
+        from hr_module.models import Employee
         try:
             employee = Employee.objects.get(emp_id=obj.emp_id)
             return employee.full_name

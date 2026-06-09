@@ -70,100 +70,108 @@
 
     <!-- Add/Edit Modal -->
     <div v-if="showModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-w-md w-full p-6">
+      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
         <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-1">{{ isEditMode ? 'Edit Crew Member' : 'Deploy New Crew' }}</h3>
-        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Offshore operations registration portal</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Offshore operations registration portal</p>
 
-        <form @submit.prevent="submitForm" class="space-y-4">
-          <div>
-            <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Employee ID</label>
-            <input
-              v-model="formData.emp_id"
-              type="text"
-              placeholder="e.g., EMP001"
-              :disabled="isEditMode"
-              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-900"
-              required
-            >
+        <!-- Tabs -->
+        <div v-if="isEditMode" class="flex gap-4 border-b border-slate-200 dark:border-slate-700 mb-4">
+          <button @click="activeModalTab = 'profile'" :class="['py-2 px-1 font-medium transition-colors', activeModalTab === 'profile' ? 'text-red-600 border-b-2 border-red-600' : 'text-slate-500 hover:text-slate-700']">Profile</button>
+          <button @click="activeModalTab = 'certifications'; fetchCertifications()" :class="['py-2 px-1 font-medium transition-colors', activeModalTab === 'certifications' ? 'text-red-600 border-b-2 border-red-600' : 'text-slate-500 hover:text-slate-700']">Certifications</button>
+        </div>
+
+        <form v-show="activeModalTab === 'profile' || !isEditMode" @submit.prevent="submitForm" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Employee ID</label>
+              <input
+                v-model="formData.emp_id"
+                type="text"
+                placeholder="e.g., EMP001"
+                :disabled="isEditMode"
+                class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-900"
+                required
+              >
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Full Name</label>
+              <input
+                v-model="formData.full_name"
+                type="text"
+                placeholder="e.g., John Doe"
+                class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                required
+              >
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Job Role</label>
+              <input
+                v-model="formData.job_role"
+                type="text"
+                placeholder="e.g., Safety Officer"
+                class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                required
+              >
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Email</label>
+              <input
+                v-model="formData.email"
+                type="email"
+                placeholder="e.g., john.doe@company.com"
+                class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+            </div>
+
+            <div v-if="!isEditMode">
+              <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Password (Optional)</label>
+              <input
+                v-model="formData.password"
+                type="password"
+                placeholder="Leave empty for auto-generated password"
+                class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">If empty, a default password will be generated</p>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Roster Status</label>
+              <select
+                v-model="formData.roster_status"
+                class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <option value="AVAILABLE">AVAILABLE</option>
+                <option value="ONBOARD">ONBOARD</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">MCU Expiry Date</label>
+              <input
+                v-model="formData.mcu_expiry"
+                type="date"
+                class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">MCU Status</label>
+              <select
+                v-model="formData.mcu_status"
+                class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <option value="PENDING">PENDING</option>
+                <option value="FIT">FIT</option>
+                <option value="UNFIT">UNFIT</option>
+                <option value="EXPIRED">EXPIRED</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Full Name</label>
-            <input
-              v-model="formData.full_name"
-              type="text"
-              placeholder="e.g., John Doe"
-              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-              required
-            >
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Job Role</label>
-            <input
-              v-model="formData.job_role"
-              type="text"
-              placeholder="e.g., Safety Officer"
-              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-              required
-            >
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Email</label>
-            <input
-              v-model="formData.email"
-              type="email"
-              placeholder="e.g., john.doe@company.com"
-              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-          </div>
-
-          <div v-if="!isEditMode">
-            <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Password (Optional)</label>
-            <input
-              v-model="formData.password"
-              type="password"
-              placeholder="Leave empty for auto-generated password"
-              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">If empty, a default password will be generated</p>
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Roster Status</label>
-            <select
-              v-model="formData.roster_status"
-              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-              <option value="AVAILABLE">AVAILABLE</option>
-              <option value="ONBOARD">ONBOARD</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">MCU Expiry Date</label>
-            <input
-              v-model="formData.mcu_expiry"
-              type="date"
-              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">MCU Status</label>
-            <select
-              v-model="formData.mcu_status"
-              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-              <option value="PENDING">PENDING</option>
-              <option value="FIT">FIT</option>
-              <option value="UNFIT">UNFIT</option>
-              <option value="EXPIRED">EXPIRED</option>
-            </select>
-          </div>
-
-          <div class="flex gap-3 pt-4">
+          <div class="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700 mt-6">
             <button type="button" @click="closeModal" class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition">
               Cancel
             </button>
@@ -172,6 +180,55 @@
             </button>
           </div>
         </form>
+
+        <!-- Certifications Tab Content -->
+        <div v-show="activeModalTab === 'certifications' && isEditMode" class="space-y-4">
+          <div class="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+            <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Add Certification</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <input v-model="newCert.cert_id" type="text" placeholder="Cert ID (e.g., C-123)" class="w-full px-3 py-2 text-sm border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+              </div>
+              <div>
+                <select v-model="newCert.cert_type" class="w-full px-3 py-2 text-sm border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+                  <option value="" disabled>Select Type</option>
+                  <option value="HOT_WORK">HOT_WORK</option>
+                  <option value="CONFINED_SPACE">CONFINED_SPACE</option>
+                  <option value="WORKING_AT_HEIGHT">WORKING_AT_HEIGHT</option>
+                  <option value="ELECTRICAL">ELECTRICAL</option>
+                  <option value="LIFTING">LIFTING</option>
+                </select>
+              </div>
+              <div class="flex gap-2">
+                <input v-model="newCert.expiry_date" type="date" class="w-full px-3 py-2 text-sm border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+                <button @click="addCertification" :disabled="isSubmittingCert" class="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 disabled:opacity-50">
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="certifications.length === 0" class="text-center py-6 text-slate-500">
+            No certifications found for this employee.
+          </div>
+          <div v-else class="space-y-2 mt-4">
+            <div v-for="cert in certifications" :key="cert.cert_id" class="flex items-center justify-between p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+              <div>
+                <p class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ cert.cert_type }}</p>
+                <p class="text-xs text-slate-500">ID: {{ cert.cert_id }} • Expires: {{ cert.expiry_date }}</p>
+              </div>
+              <button @click="deleteCertification(cert.cert_id)" class="text-red-500 hover:text-red-700 p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700 mt-4">
+            <button type="button" @click="closeModal" class="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+              Close
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </DashboardLayout>
@@ -216,6 +273,15 @@ const formData = ref({
   password: ''
 })
 
+const activeModalTab = ref('profile')
+const certifications = ref([])
+const isSubmittingCert = ref(false)
+const newCert = ref({
+  cert_id: '',
+  cert_type: '',
+  expiry_date: ''
+})
+
 // Methods
 const fetchEmployees = async () => {
   loading.value = true
@@ -245,6 +311,7 @@ const updateStats = () => {
 
 const openAddModal = () => {
   isEditMode.value = false
+  activeModalTab.value = 'profile'
   formData.value = {
     emp_id: '',
     full_name: '',
@@ -260,6 +327,7 @@ const openAddModal = () => {
 
 const editEmployee = (emp) => {
   isEditMode.value = true
+  activeModalTab.value = 'profile'
   formData.value = { ...emp }
   showModal.value = true
 }
@@ -326,6 +394,66 @@ const deleteEmployee = async (empId) => {
   } catch (error) {
     console.error('Error deleting employee:', error)
     alert('Network error occurred. Please try again.')
+  }
+}
+
+// Certifications Management
+const fetchCertifications = async () => {
+  if (!formData.value.emp_id) return
+  try {
+    const response = await fetch(`${API_BASE_URL}/hr/certifications/${formData.value.emp_id}/`, {
+      headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+    })
+    if (response.ok) {
+      certifications.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Error fetching certifications:', error)
+  }
+}
+
+const addCertification = async () => {
+  if (!newCert.value.cert_id || !newCert.value.cert_type || !newCert.value.expiry_date) {
+    alert('Please fill all certification fields')
+    return
+  }
+  isSubmittingCert.value = true
+  try {
+    const response = await fetch(`${API_BASE_URL}/hr/certifications/add/${formData.value.emp_id}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
+      body: JSON.stringify(newCert.value)
+    })
+    
+    if (response.ok) {
+      newCert.value = { cert_id: '', cert_type: '', expiry_date: '' }
+      fetchCertifications()
+    } else {
+      const err = await response.json()
+      alert('Failed to add certification: ' + JSON.stringify(err))
+    }
+  } catch (error) {
+    console.error('Error adding certification:', error)
+  } finally {
+    isSubmittingCert.value = false
+  }
+}
+
+const deleteCertification = async (certId) => {
+  if (!confirm(`Delete certification ${certId}?`)) return
+  try {
+    const response = await fetch(`${API_BASE_URL}/hr/certifications/delete/${certId}/`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+    })
+    if (response.ok) {
+      fetchCertifications()
+    }
+  } catch (error) {
+    console.error('Error deleting certification:', error)
   }
 }
 

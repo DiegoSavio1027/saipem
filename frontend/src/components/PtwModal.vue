@@ -63,6 +63,42 @@
           </div>
 
           <div class="space-y-2">
+              <Label>Assigned Crew <span class="text-red-500">*</span></Label>
+              <Popover v-model:open="openCrew">
+                  <PopoverTrigger as-child>
+                      <Button variant="outline" role="combobox" :aria-expanded="openCrew" class="w-full justify-between">
+                          {{ selectedCrew.length ? selectedCrew.length + ' personnel selected' : 'Select crew...' }}
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 h-4 w-4 shrink-0 opacity-50"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </Button>
+                  </PopoverTrigger>
+                  <PopoverContent class="p-0 w-[550px]">
+                      <Command>
+                          <CommandInput placeholder="Search employee..." />
+                          <CommandList>
+                              <CommandEmpty>No employee found.</CommandEmpty>
+                              <CommandGroup>
+                                  <CommandItem
+                                      v-for="emp in availableUsers"
+                                      :key="emp.emp_id"
+                                      :value="emp.emp_id"
+                                      @select="() => toggleCrewSelection(emp.emp_id)"
+                                  >
+                                      {{ emp.full_name }} ({{ emp.emp_id }})
+                                      <CheckIcon
+                                          :class="cn(
+                                              'ml-auto h-4 w-4',
+                                              selectedCrew.includes(emp.emp_id) ? 'opacity-100' : 'opacity-0',
+                                          )"
+                                      />
+                                  </CommandItem>
+                              </CommandGroup>
+                          </CommandList>
+                      </Command>
+                  </PopoverContent>
+              </Popover>
+          </div>
+
+          <div class="space-y-2">
               <Label for="permit_type">Permit Type <span class="text-red-500">*</span></Label>
               <Select v-model="formData.permit_type">
                   <SelectTrigger class="w-full">
@@ -86,8 +122,8 @@
                   </SelectTrigger>
                   <SelectContent class="w-full">
                       <SelectGroup>
-                          <SelectItem v-for="loc in locations" :key="loc.id" :value="loc.name">
-                              {{ loc.name }}
+                          <SelectItem v-for="loc in locations" :key="loc.id" :value="String(loc.id)">
+                              {{ loc.deck_name }}
                           </SelectItem>
                       </SelectGroup>
                   </SelectContent>
@@ -148,7 +184,7 @@
 
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
-import { authState } from '@/store/auth';
+import { authState, getAccessToken } from '@/store/auth';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -176,8 +212,18 @@ const workOrders = ref([]);
 const locations = ref([]);
 const openApplicant = ref(false);
 const openWorkOrder = ref(false);
+const openCrew = ref(false);
 const selectedApplicant = ref('');
 const selectedWorkOrder = ref('');
+const selectedCrew = ref([]);
+
+const toggleCrewSelection = (empId) => {
+    if (selectedCrew.value.includes(empId)) {
+        selectedCrew.value = selectedCrew.value.filter(id => id !== empId);
+    } else {
+        selectedCrew.value.push(empId);
+    }
+};
 
 const selectedApplicantData = computed(() =>
   availableUsers.value.find(emp => emp.emp_id === selectedApplicant.value),
@@ -212,8 +258,15 @@ const formData = ref({
 
 const fetchEmployees = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/hse/employees/`, {
-            credentials: 'include'
+        const vesselId = authState.selectedVessel?.asset_id || authState.assignedVessel?.asset_id;
+        let url = `${API_BASE_URL}/hse/employees/`;
+        if (vesselId) {
+            url += `?vessel_id=${vesselId}`;
+        }
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
         });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -241,8 +294,10 @@ const fetchWorkOrders = async () => {
         }
 
         // Fetch from Asset Module with vessel filter
-        const response = await fetch(`${API_BASE_URL}/asset/work-orders/?vessel_id=${vesselId}`, {
-            credentials: 'include'
+        const response = await fetch(`${API_BASE_URL}/asset/workorders/?vessel_id=${vesselId}`, {
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
         });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -267,7 +322,9 @@ const fetchLocations = async () => {
         }
 
         const response = await fetch(`${API_BASE_URL}/offshore/locations/?vessel_id=${vesselId}`, {
-            credentials: 'include'
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
         });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -311,8 +368,10 @@ const resetForm = () => {
     };
     selectedApplicant.value = '';
     selectedWorkOrder.value = '';
+    selectedCrew.value = [];
     openApplicant.value = false;
     openWorkOrder.value = false;
+    openCrew.value = false;
 };
 
 watch(() => props.show, (newVal) => {
@@ -323,22 +382,27 @@ watch(() => props.lastPermitId, (newVal) => {
     resetForm();
 });
 
-// Watch for vessel changes and re-fetch work orders and locations
+// Watch for vessel changes and re-fetch work orders, locations, and crew
 watch(() => authState.selectedVessel?.asset_id || authState.assignedVessel?.asset_id, (newVesselId) => {
     if (newVesselId) {
         formData.value.vessel_id = newVesselId;
         fetchLocations();
         fetchWorkOrders();
+        fetchEmployees();
     }
 });
 
 const handleSubmit = () => {
-    if (props.userRole === 'Admin' || props.userRole === 'Safety Officer') {
-        if (selectedApplicantData.value) {
-            formData.value.emp_id = selectedApplicantData.value.emp_id;
-        }
-    }
-    formData.value.wo_id = selectedWorkOrder.value;
-    emit('submitPtw', formData.value);
+    const payload = {
+        permit_id: formData.value.permit_id,
+        emp_id: props.userRole === 'Admin' || props.userRole === 'Safety Officer' ? selectedApplicant.value : props.username,
+        permit_type: formData.value.permit_type,
+        wo_id: selectedWorkOrder.value,
+        deck_location: formData.value.deck_location ? parseInt(formData.value.deck_location) : null,
+        vessel: authState.selectedVessel?.asset_id || authState.assignedVessel?.asset_id || '',
+        assigned_personnel_ids: selectedCrew.value,
+        status: 'PENDING'
+    };
+    emit('submitPtw', payload);
 };
 </script>

@@ -39,8 +39,8 @@
             </SelectTrigger>
             <SelectContent class="w-full">
               <SelectGroup>
-                <SelectItem v-for="loc in locations" :key="loc.id" :value="loc.name">
-                  {{ loc.name }}
+                <SelectItem v-for="loc in locations" :key="loc.id" :value="String(loc.id)">
+                  {{ loc.deck_name }}
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
@@ -70,7 +70,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue';
-import { authState } from '@/store/auth';
+import { authState, getAccessToken } from '@/store/auth';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -102,7 +102,9 @@ const fetchLocations = async () => {
     }
 
     const response = await fetch(`${API_BASE_URL}/offshore/locations/?vessel_id=${vesselId}`, {
-      credentials: 'include'
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
     });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -122,7 +124,7 @@ onMounted(() => {
 watch(() => props.ptw, (newPtw) => {
   if (newPtw) {
     editData.value = {
-      deck_location: newPtw.deck_location || ''
+      deck_location: newPtw.deck_location ? String(newPtw.deck_location) : ''
     };
   }
 }, { immediate: true });
@@ -141,12 +143,12 @@ const handleSave = async () => {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': getCsrfToken() || ''
+        'X-CSRFToken': getCsrfToken() || '',
+        'Authorization': `Bearer ${getAccessToken()}`
       },
       body: JSON.stringify({
-        deck_location: editData.value.deck_location
-      }),
-      credentials: 'include'
+        deck_location: editData.value.deck_location ? parseInt(editData.value.deck_location) : null
+      })
     });
 
     if (response.ok) {

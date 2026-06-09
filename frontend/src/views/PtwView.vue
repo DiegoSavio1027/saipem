@@ -141,7 +141,7 @@ import ConfirmCloseDialog from '@/components/ptw-dialogs/ConfirmCloseDialog.vue'
 import MarkDoneDialog from '@/components/ptw-dialogs/MarkDoneDialog.vue';
 import EditPTWDialog from '@/components/ptw-dialogs/EditPTWDialog.vue';
 import DeleteConfirmDialog from '@/components/ptw-dialogs/DeleteConfirmDialog.vue';
-import { authState } from '@/store/auth';
+import { authState, getAccessToken } from '@/store/auth';
 import { getCsrfToken } from '@/utils/csrf';
 import { toast } from 'vue-sonner';
 import { ptwSocketState, initializePTWWebSocket, closePTWWebSocket } from '@/store/websocket';
@@ -240,7 +240,9 @@ const fetchPtw = async () => {
         }
         const queryString = params.toString() ? `?${params.toString()}` : '';
         const response = await fetch(`${API_BASE_URL}/hse/ptw/${queryString}`, {
-            credentials: 'include'
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
         });
 
         if (response.ok) {
@@ -261,10 +263,10 @@ const submitPTW = async (formDataPayload) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify(formDataPayload),
-            credentials: 'include'
+            body: JSON.stringify(formDataPayload)
         });
 
         if (response.ok) {
@@ -272,8 +274,11 @@ const submitPTW = async (formDataPayload) => {
             fetchPtw();
             toast.success("Success", { description: "PTW request sent successfully." });
         } else {
-             console.error("Error submitting PTW:", await response.text());
-             toast.error("Failed", { description: "Failed to send PTW request." });
+            const errorData = await response.json();
+            const errorMsgs = Object.values(errorData).flat();
+            const errorMsg = errorMsgs[0] || "Failed to send PTW request.";
+            console.error("Error submitting PTW:", errorData);
+            toast.error("Failed", { description: errorMsg });
         }
     } catch (error) {
         console.error("Error submitting PTW:", error);
@@ -290,10 +295,10 @@ const approvePTW = async (signature) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify({ signature }),
-            credentials: 'include'
+            body: JSON.stringify({ signature })
         });
         
 
@@ -317,10 +322,10 @@ const rejectPTW = async (rejection_reason) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify({ rejection_reason }),
-            credentials: 'include'
+            body: JSON.stringify({ rejection_reason })
         });
 
         if (response.ok) {
@@ -357,9 +362,9 @@ const confirmDelete = async () => {
         const response = await fetch(`${API_BASE_URL}/hse/ptw/${selectedPTWId.value}/`, {
             method: 'DELETE',
             headers: {
-                'X-CSRFToken': getCsrfToken() || ''
-            },
-            credentials: 'include'
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
         });
 
         if (response.ok || response.status === 204) {
@@ -382,10 +387,10 @@ const markAsDone = async (completion_notes) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify({ completion_notes }),
-            credentials: 'include'
+            body: JSON.stringify({ completion_notes })
         });
 
         if (response.ok) {
@@ -408,10 +413,10 @@ const confirmClosePTW = async (closing_notes) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify({ closing_notes }),
-            credentials: 'include'
+            body: JSON.stringify({ closing_notes })
         });
 
         if (response.ok) {
@@ -435,9 +440,9 @@ const bulkApprovePTW = async (ptw_ids) => {
             const response = await fetch(`${API_BASE_URL}/hse/ptw/${ptw_id}/approve/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCsrfToken() || ''
-                },
-                credentials: 'include'
+                    'X-CSRFToken': getCsrfToken() || '',
+                    'Authorization': `Bearer ${getAccessToken()}`
+                }
             });
             if (response.ok) {
                 successCount++;
@@ -458,9 +463,9 @@ const bulkRejectPTW = async (ptw_ids) => {
             const response = await fetch(`${API_BASE_URL}/hse/ptw/${ptw_id}/reject/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCsrfToken() || ''
-                },
-                credentials: 'include'
+                    'X-CSRFToken': getCsrfToken() || '',
+                    'Authorization': `Bearer ${getAccessToken()}`
+                }
             });
             if (response.ok) {
                 successCount++;

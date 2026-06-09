@@ -26,4 +26,9 @@ urlpatterns = [
     # --- Position Master Rates API ---
     path('positions/', views.position_list, name='position_list'),
     path('positions/delete/<int:pk>/', views.delete_position, name='delete_position'),
+
+    # --- Certification Management API ---
+    path('certifications/<str:emp_id>/', views.certification_list, name='certification_list'),
+    path('certifications/add/<str:emp_id>/', views.add_certification, name='add_certification'),
+    path('certifications/delete/<str:cert_id>/', views.delete_certification, name='delete_certification'),
 ]

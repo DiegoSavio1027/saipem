@@ -1,7 +1,7 @@
 import datetime
 from rest_framework import serializers
-from hse_module.hse_ptw.models import Employee
-from .models import Roster, VesselActivity, Position
+from .models import Employee
+from .models import Roster, VesselActivity, Position, Certification
 
 # ==========================================
 # 1. EMPLOYEE SERIALIZER
@@ -72,4 +72,13 @@ class VesselActivitySerializer(serializers.ModelSerializer):
 class PositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Position
+        fields = '__all__'
+
+
+# ==========================================
+# 6. CERTIFICATION SERIALIZER
+# ==========================================
+class CertificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Certification
         fields = '__all__'

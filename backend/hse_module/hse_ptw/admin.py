@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Employee, PermitToWork
+from .models import PermitToWork
+from hr_module.models import Employee
 
 
 @admin.register(Employee)

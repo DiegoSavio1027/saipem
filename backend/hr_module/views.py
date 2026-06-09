@@ -4,14 +4,15 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from .models import Roster, VesselActivity, Position
-from hse_module.hse_ptw.models import Employee
+from .models import Roster, VesselActivity, Position, Certification
+from .models import Employee
 from asset_module.models import Vessel
 from .serializers import (
     EmployeeSerializer,
     RosterSerializer,
     VesselActivitySerializer,
-    PositionSerializer
+    PositionSerializer,
+    CertificationSerializer
 )
 
 # ==========================================
@@ -280,6 +281,37 @@ def dashboard_analytics(request):
         "mcu_alerts": mcu_alerts,
         "total_vessels": total_vessels,
         "active_vessels": active_vessels,
-        "vessel_active_rate": vessel_active_rate,
         "estimated_budget": estimated_budget
     })
+
+
+# ==========================================
+# 8. CERTIFICATION MANAGEMENT API
+# ==========================================
+
+@api_view(['GET'])
+def certification_list(request, emp_id):
+    certs = Certification.objects.filter(employee_id=emp_id)
+    serializer = CertificationSerializer(certs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+def add_certification(request, emp_id):
+    data = request.data.copy()
+    data['employee'] = emp_id
+    serializer = CertificationSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+def delete_certification(request, cert_id):
+    try:
+        cert = Certification.objects.get(cert_id=cert_id)
+        cert.delete()
+        return Response({"message": "Certification deleted"}, status=status.HTTP_200_OK)
+    except Certification.DoesNotExist:
+        return Response({"error": "Certification not found"}, status=status.HTTP_404_NOT_FOUND)

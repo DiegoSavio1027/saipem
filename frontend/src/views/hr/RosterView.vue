@@ -7,10 +7,6 @@
           <Ship class="w-5 h-5" /> Deploy Crew to Vessel
         </button>
 
-        <button @click="openActivityModal" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 px-6 rounded-xl border border-slate-200 dark:border-slate-700 transition tracking-wider uppercase flex items-center justify-center gap-3">
-          <Plus class="w-4 h-4" /> Add Vessel Activity
-        </button>
-
         <div class="pt-2">
           <h2 class="text-xs font-bold text-slate-500 dark:text-slate-600 uppercase tracking-widest mb-2">Deployed Crew</h2>
           <div class="relative mb-3">
@@ -140,7 +136,7 @@
 
           <div>
             <label class="text-xs text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">Select Vessel</label>
-            <select v-model="assignForm.asset_id" class="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl mt-1 text-slate-900 dark:text-white focus:border-[var(--color-saipem-tertiary)] outline-none transition" required>
+            <select v-model="assignForm.vessel" class="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl mt-1 text-slate-900 dark:text-white focus:border-[var(--color-saipem-tertiary)] outline-none transition" required>
               <option value="">-- Choose Vessel --</option>
               <option v-for="asset in assets" :key="asset.asset_id" :value="asset.asset_id">{{ asset.name }}</option>
             </select>
@@ -160,43 +156,6 @@
           <div class="flex gap-3 pt-4">
             <button type="button" @click="showAssignModal = false" class="flex-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 p-3.5 rounded-xl font-bold transition text-slate-900 dark:text-white">Cancel</button>
             <button type="submit" class="flex-1 bg-[var(--color-saipem-tertiary)] hover:bg-orange-600 p-3.5 rounded-xl font-black tracking-wider uppercase transition text-white">Confirm</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Asset Modal -->
-    <div v-if="showAssetModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-sm text-slate-900 dark:text-white">
-        <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Add Fleet Vessel</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-600 uppercase tracking-widest mb-6">Register new Rig or Offshore Vessel</p>
-
-        <form @submit.prevent="submitAsset" class="space-y-4">
-          <div>
-            <label class="text-xs text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">Vessel ID (lowercase, ex: delta)</label>
-            <input v-model="assetForm.asset_id" type="text" placeholder="ex: barge-03" class="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl mt-1 text-slate-900 dark:text-white focus:border-[var(--color-saipem-tertiary)] outline-none transition" required>
-          </div>
-          <div>
-            <label class="text-xs text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">Vessel Name</label>
-            <input v-model="assetForm.name" type="text" placeholder="ex: Barge Sejahtera III" class="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl mt-1 text-slate-900 dark:text-white focus:border-[var(--color-saipem-tertiary)] outline-none transition" required>
-          </div>
-          <div>
-            <label class="text-xs text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">Vessel Capacity</label>
-            <input v-model="assetForm.capacity" type="text" placeholder="ex: 120 Pax" class="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl mt-1 text-slate-900 dark:text-white focus:border-[var(--color-saipem-tertiary)] outline-none transition" required>
-          </div>
-
-          <div>
-            <label class="text-xs text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">Select Vessel Icon</label>
-            <div class="grid grid-cols-5 gap-2 mt-2">
-              <button v-for="icon in vesselIcons" :key="icon.name" type="button" @click="assetForm.icon = icon.name" :class="['bg-slate-50 dark:bg-black border p-3 rounded-xl transition duration-150', assetForm.icon === icon.name ? 'border-[var(--color-saipem-tertiary)] text-[var(--color-saipem-tertiary)] shadow-lg' : 'border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 hover:border-[var(--color-saipem-tertiary)]']">
-                <component :is="icon.component" class="w-5 h-5 mx-auto" />
-              </button>
-            </div>
-          </div>
-
-          <div class="flex gap-3 pt-3">
-            <button type="button" @click="showAssetModal = false" class="flex-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 p-3.5 rounded-xl font-bold transition text-slate-900 dark:text-white">Cancel</button>
-            <button type="submit" class="flex-1 bg-[var(--color-saipem-tertiary)] hover:bg-orange-600 p-3.5 rounded-xl font-black tracking-wider uppercase transition text-white">Add Fleet</button>
           </div>
         </form>
       </div>
@@ -292,7 +251,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { authState } from '@/store/auth'
+import { authState, getAccessToken } from '@/store/auth'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { Ship, Plus, Search, ChevronLeft, ChevronRight, ListChecks, AlertTriangle, Trash2, Clock, MoreHorizontal, X, Shield, Anchor, Radio, Zap, Flame, Satellite, Settings, Warehouse } from '@lucide/vue'
 
@@ -351,8 +310,7 @@ const showDetailModal = ref(false)
 const showConfirmModal = ref(false)
 
 // Form Data
-const assignForm = ref({ employee: '', asset_id: '', start: '', end: '' })
-const assetForm = ref({ asset_id: '', name: '', capacity: '', icon: 'Ship' })
+const assignForm = ref({ employee: '', vessel: '', start: '', end: '' })
 const activityForm = ref({ start: '', end: '', activity_name: '' })
 
 // Lucide icon options for vessels
@@ -462,7 +420,9 @@ const executeConfirm = () => {
 // API Calls
 const fetchEmployees = async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/hr/employees/`)
+    const res = await fetch(`${API_BASE_URL}/hr/employees/`, {
+      headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+    })
     employees.value = await res.json()
   } catch (err) {
     console.error('Error loading employees:', err)
@@ -471,7 +431,9 @@ const fetchEmployees = async () => {
 
 const fetchAssets = async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/offshore/vessels/`)
+    const res = await fetch(`${API_BASE_URL}/offshore/vessels/`, {
+      headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+    })
     assets.value = await res.json()
   } catch (err) {
     console.error('Error loading assets:', err)
@@ -480,7 +442,9 @@ const fetchAssets = async () => {
 
 const fetchRosters = async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/hr/rosters/`)
+    const res = await fetch(`${API_BASE_URL}/hr/rosters/`, {
+      headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+    })
     rosters.value = await res.json()
   } catch (err) {
     console.error('Error loading rosters:', err)
@@ -489,7 +453,9 @@ const fetchRosters = async () => {
 
 const fetchActivities = async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/hr/activities/`)
+    const res = await fetch(`${API_BASE_URL}/hr/activities/`, {
+      headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+    })
     activities.value = await res.json()
   } catch (err) {
     console.error('Error loading activities:', err)
@@ -621,7 +587,7 @@ const renderAssetRows = () => {
         formattedDate = timeUnits.value[colIndex].toISOString().split('T')[0]
         assignment = rosters.value.find(r => {
           const matchesSearch = query === '' || r.title.toLowerCase().includes(query)
-          return r.location === asset.name && formattedDate >= r.start && formattedDate <= r.end && matchesSearch
+          return r.vessel === asset.asset_id && formattedDate >= r.start && formattedDate <= r.end && matchesSearch
         })
       } else if (viewMode.value === 'year') {
         const targetMonth = timeUnits.value[colIndex]
@@ -629,7 +595,7 @@ const renderAssetRows = () => {
         const monthEnd = `${targetMonth.year}-${String(targetMonth.month + 1).padStart(2, '0')}-${new Date(targetMonth.year, targetMonth.month + 1, 0).getDate()}`
         assignment = rosters.value.find(r => {
           const matchesSearch = query === '' || r.title.toLowerCase().includes(query)
-          return r.location === asset.name && r.start <= monthEnd && r.end >= monthStart && matchesSearch
+          return r.vessel === asset.asset_id && r.start <= monthEnd && r.end >= monthStart && matchesSearch
         })
       }
 
@@ -642,7 +608,7 @@ const renderAssetRows = () => {
             const nextDate = timeUnits.value[nextIndex].toISOString().split('T')[0]
             nextAssignment = rosters.value.find(r => {
               const matchesSearch = query === '' || r.title.toLowerCase().includes(query)
-              return r.location === asset.name && nextDate >= r.start && nextDate <= r.end && r.id === assignment.id && matchesSearch
+              return r.vessel === asset.asset_id && nextDate >= r.start && nextDate <= r.end && r.id === assignment.id && matchesSearch
             })
           } else if (viewMode.value === 'year') {
             const nextMonth = timeUnits.value[nextIndex]
@@ -650,7 +616,7 @@ const renderAssetRows = () => {
             const nEnd = `${nextMonth.year}-${String(nextMonth.month + 1).padStart(2, '0')}-${new Date(nextMonth.year, nextMonth.month + 1, 0).getDate()}`
             nextAssignment = rosters.value.find(r => {
               const matchesSearch = query === '' || r.title.toLowerCase().includes(query)
-              return r.location === asset.name && r.start <= nEnd && r.end >= nStart && r.id === assignment.id && matchesSearch
+              return r.vessel === asset.asset_id && r.start <= nEnd && r.end >= nStart && r.id === assignment.id && matchesSearch
             })
           }
           if (nextAssignment) {
@@ -680,7 +646,7 @@ const renderAssetRows = () => {
 // Modal Handlers
 const openNewAddModal = () => {
   const today = new Date().toISOString().split('T')[0]
-  assignForm.value = { employee: '', asset_id: '', start: today, end: today }
+  assignForm.value = { employee: '', vessel: '', start: today, end: today }
   showAssignModal.value = true
 }
 
@@ -746,7 +712,10 @@ const submitAssignment = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/hr/rosters/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
       body: JSON.stringify(assignForm.value)
     })
 
@@ -771,7 +740,10 @@ const submitAssignment = async () => {
 const deleteAssignment = (id) => {
   showConfirm('Terminate crew deployment duration?', async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/hr/rosters/delete/${id}/`, { method: 'DELETE' })
+      const response = await fetch(`${API_BASE_URL}/hr/rosters/delete/${id}/`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+      })
       if (response.ok) {
         await fetchRosters()
         renderGrid()
@@ -785,54 +757,6 @@ const deleteAssignment = (id) => {
   })
 }
 
-const submitAsset = async () => {
-  const newAsset = {
-    asset_id: assetForm.value.asset_id.trim().toLowerCase(),
-    name: assetForm.value.name.trim(),
-    capacity: assetForm.value.capacity.trim(),
-    icon: assetForm.value.icon
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/offshore/vessels/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newAsset)
-    })
-
-    if (response.ok) {
-      showAssetModal.value = false
-      await fetchAssets()
-      renderGrid()
-      showToast('success', 'FLEET REGISTERED', `Vessel "${newAsset.name}" is now operational.`)
-    } else {
-      showToast('error', 'REGISTRATION FAILURE', 'System failed to write new vessel specification.')
-    }
-  } catch (err) {
-    showToast('error', 'REGISTRATION FAILURE', 'Network error occurred.')
-  }
-}
-
-const deleteAsset = (assetId, assetName) => {
-  showConfirm(`Decommission and permanently delete vessel "${assetName}"? This will flush all child logs.`, async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/offshore/vessels/${assetId}/`, { method: 'DELETE' })
-      if (response.ok) {
-        if (vesselFilter.value === assetId) {
-          vesselFilter.value = 'ALL'
-        }
-        await fetchAssets()
-        await fetchRosters()
-        renderGrid()
-        showToast('success', 'VESSEL DECOMMISSIONED', `Vessel "${assetName}" has been safely deleted.`)
-      } else {
-        showToast('error', 'DECOMMISSION FAILURE', 'The server declined decommission protocols.')
-      }
-    } catch (err) {
-      showToast('error', 'DECOMMISSION FAILURE', 'Network error occurred.')
-    }
-  })
-}
 
 const submitActivity = async () => {
   if (new Date(activityForm.value.end) < new Date(activityForm.value.start)) {
@@ -850,7 +774,10 @@ const submitActivity = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/hr/activities/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
       body: JSON.stringify(activityData)
     })
 
@@ -870,7 +797,10 @@ const submitActivity = async () => {
 const deleteActivity = (id) => {
   showConfirm('Permanently delete this vessel activity log?', async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/hr/activities/delete/${id}/`, { method: 'DELETE' })
+      const response = await fetch(`${API_BASE_URL}/hr/activities/delete/${id}/`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+      })
       if (response.ok) {
         await fetchActivities()
         renderGrid()

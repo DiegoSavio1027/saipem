@@ -1,5 +1,10 @@
 <template>
   <DashboardLayout @open-modal="showModal = true">
+      <!-- Weather & Global Status Area -->
+      <div class="mb-6">
+        <WeatherWidget />
+      </div>
+
       <!-- Dashboard Stats - Only for Admin/Safety Officer -->
       <DashboardStats
           v-if="authState.userRole !== 'Worker'"
@@ -9,7 +14,7 @@
           :daysWithoutLTI="daysWithoutLTI"
           :nearMisses="nearMisses"
           :globalStatus="globalStatus"
-          vesselName="Saipem 7000"
+          :vesselName="authState.selectedVessel?.name || 'All Vessels'"
       />
 
       <!-- Worker Dashboard -->
@@ -107,6 +112,14 @@
     @update:open="showIncidentForm = $event"
     @incident-reported="handleIncidentReported"
   />
+
+  <ToolboxTalkDialog
+    :open="toolboxTalkDialogOpen"
+    :permit-id="selectedPTW?.permit_id || ''"
+    :ptw-id="selectedPTWId || 0"
+    @update:open="toolboxTalkDialogOpen = $event"
+    @confirm="handleStartWorkConfirmed"
+  />
 </template>
 
 <script setup>
@@ -116,6 +129,7 @@ import DashboardStats from '@/components/DashboardStats.vue';
 import PendingApprovals from '@/components/PendingApprovals.vue';
 import WaitingForClose from '@/components/WaitingForClose.vue';
 import WorkerDashboard from '@/components/WorkerDashboard.vue';
+import WeatherWidget from '@/components/WeatherWidget.vue';
 import PtwModal from '@/components/PtwModal.vue';
 import ViewPTWDialog from '@/components/ptw-dialogs/ViewPTWDialog.vue';
 import ApproveSignatureDialog from '@/components/ptw-dialogs/ApproveSignatureDialog.vue';
@@ -123,8 +137,9 @@ import RejectDialog from '@/components/ptw-dialogs/RejectDialog.vue';
 import ConfirmCloseDialog from '@/components/ptw-dialogs/ConfirmCloseDialog.vue';
 import MarkDoneDialog from '@/components/ptw-dialogs/MarkDoneDialog.vue';
 import EditPTWDialog from '@/components/ptw-dialogs/EditPTWDialog.vue';
+import ToolboxTalkDialog from '@/components/ptw-dialogs/ToolboxTalkDialog.vue';
 import IncidentReportForm from '@/components/IncidentReportForm.vue';
-import { authState } from '@/store/auth';
+import { authState, getAccessToken } from '@/store/auth';
 import { websocketState } from '@/store/websocket';
 import { getCsrfToken } from '@/utils/csrf';
 import { toast } from 'vue-sonner';
@@ -173,6 +188,7 @@ const rejectDialogOpen = ref(false);
 const confirmCloseDialogOpen = ref(false);
 const markDoneDialogOpen = ref(false);
 const editDialogOpen = ref(false);
+const toolboxTalkDialogOpen = ref(false);
 
 const selectedPTW = ref(null);
 const selectedPTWId = ref(null);
@@ -190,7 +206,11 @@ const lastPermitId = computed(() => {
 const fetchInitialData = async () => {
     try {
         const vesselParam = authState.selectedVessel ? `?vessel=${authState.selectedVessel.asset_id}` : '';
-        const response = await fetch(`${API_BASE_URL}/hse/ptw/${vesselParam}`, { credentials: 'include' });
+        const response = await fetch(`${API_BASE_URL}/hse/ptw/${vesselParam}`, {
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
+        });
         if (response.ok) {
             const data = await response.json();
             allPTWs.value = data;
@@ -213,7 +233,11 @@ const fetchInitialData = async () => {
 const fetchHSEStatus = async () => {
     try {
         const vesselParam = authState.selectedVessel ? `?vessel=${authState.selectedVessel.asset_id}` : '';
-        const response = await fetch(`${API_BASE_URL}/hse/status/current/${vesselParam}`, { credentials: 'include' });
+        const response = await fetch(`${API_BASE_URL}/hse/status/current/${vesselParam}`, {
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
+        });
         if (response.ok) {
             const data = await response.json();
             activePermits.value = data.active_permits || 0;
@@ -232,10 +256,10 @@ const submitPTW = async (formDataPayload) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify(formDataPayload),
-            credentials: 'include'
+            body: JSON.stringify(formDataPayload)
         });
 
         if (response.ok) {
@@ -243,8 +267,11 @@ const submitPTW = async (formDataPayload) => {
             showModal.value = false;
             toast.success("Success", { description: "PTW request sent successfully. Waiting for Safety Officer approval." });
         } else {
-             console.error("Error submitting PTW:", await response.text());
-             toast.error("Failed", { description: "Failed to send PTW request." });
+            const errorData = await response.json();
+            const errorMsgs = Object.values(errorData).flat();
+            const errorMsg = errorMsgs[0] || "Failed to send PTW request.";
+            console.error("Error submitting PTW:", errorData);
+            toast.error("Failed", { description: errorMsg });
         }
     } catch (error) {
         console.error("Error submitting PTW:", error);
@@ -266,10 +293,10 @@ const handleApproveWithSignature = async (signature) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify({ signature }),
-            credentials: 'include'
+            body: JSON.stringify({ signature })
         });
 
         if (response.ok) {
@@ -301,10 +328,10 @@ const handleRejectWithReason = async (rejection_reason) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify({ rejection_reason }),
-            credentials: 'include'
+            body: JSON.stringify({ rejection_reason })
         });
 
         if (response.ok) {
@@ -333,9 +360,9 @@ const bulkApprovePTW = async (ptw_ids) => {
             const response = await fetch(`${API_BASE_URL}/hse/ptw/${ptw_id}/approve/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCsrfToken() || ''
-                },
-                credentials: 'include'
+                    'X-CSRFToken': getCsrfToken() || '',
+                    'Authorization': `Bearer ${getAccessToken()}`
+                }
             });
             if (response.ok) {
                 successCount++;
@@ -356,9 +383,9 @@ const bulkRejectPTW = async (ptw_ids) => {
             const response = await fetch(`${API_BASE_URL}/hse/ptw/${ptw_id}/reject/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCsrfToken() || ''
-                },
-                credentials: 'include'
+                    'X-CSRFToken': getCsrfToken() || '',
+                    'Authorization': `Bearer ${getAccessToken()}`
+                }
             });
             if (response.ok) {
                 successCount++;
@@ -382,14 +409,23 @@ const markAsDone = async (ptw_id) => {
 };
 
 const startWork = async (ptw_id) => {
+    const ptw = allPTWs.value.find(p => p.id === ptw_id);
+    if (ptw) {
+        selectedPTW.value = ptw;
+        selectedPTWId.value = ptw_id;
+        toolboxTalkDialogOpen.value = true;
+    }
+};
+
+const handleStartWorkConfirmed = async (ptw_id) => {
     try {
         const response = await fetch(`${API_BASE_URL}/hse/ptw/${ptw_id}/start_work/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
-            },
-            credentials: 'include'
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
         });
 
         if (response.ok) {
@@ -411,10 +447,10 @@ const handleMarkDoneWithNotes = async (completion_notes) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify({ completion_notes }),
-            credentials: 'include'
+            body: JSON.stringify({ completion_notes })
         });
 
         if (response.ok) {
@@ -446,10 +482,10 @@ const handleConfirmClose = async (closing_notes) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
-            body: JSON.stringify({ closing_notes }),
-            credentials: 'include'
+            body: JSON.stringify({ closing_notes })
         });
 
         if (response.ok) {
@@ -479,9 +515,9 @@ const deletePTW = async (ptw_id) => {
         const response = await fetch(`${API_BASE_URL}/hse/ptw/${ptw_id}/`, {
             method: 'DELETE',
             headers: {
-                'X-CSRFToken': getCsrfToken() || ''
-            },
-            credentials: 'include'
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
+            }
         });
 
         if (response.ok || response.status === 204) {

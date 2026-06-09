@@ -83,11 +83,29 @@ const routes = [
         component: () => import('@/views/admin/VesselRegistryView.vue'),
         meta: { requiresAuth: true, requiredRole: 'Admin' }
     },
+    {
+        path: '/admin/users',
+        name: 'UserManagement',
+        component: () => import('@/views/admin/UserManagementView.vue'),
+        meta: { requiresAuth: true, requiredRole: 'Admin' }
+    },
     // Asset Module Routes
     {
         path: '/assets',
         name: 'Assets',
         component: () => import('@/views/AssetsView.vue'),
+        meta: { requiresAuth: true, requiredModule: 'asset' }
+    },
+    {
+        path: '/assets/work-orders',
+        name: 'WorkOrders',
+        component: () => import('@/views/WorkOrdersView.vue'),
+        meta: { requiresAuth: true, requiredModule: 'asset' }
+    },
+    {
+        path: '/assets/machinery',
+        name: 'Machinery',
+        component: () => import('@/views/MachineryView.vue'),
         meta: { requiresAuth: true, requiredModule: 'asset' }
     }
 ];

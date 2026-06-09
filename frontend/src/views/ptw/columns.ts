@@ -14,12 +14,14 @@ export interface PTW {
     wo_id: string
     description: string
   }
-  deck_location?: string
+  deck_location?: string | number
+  deck_location_name?: string
   employee?: {
     emp_id: string
     full_name: string
     job_role: string
   }
+  assigned_crew?: any[]
   status: 'PENDING' | 'APPROVED' | 'WAITING_FOR_CLOSE' | 'REJECTED' | 'CLOSED'
   status_display?: string
   created_at?: string
@@ -61,11 +63,16 @@ export const createColumns = (
   },
   {
     accessorKey: 'applicant',
-    header: 'Applicant',
+    header: 'Personnel',
     cell: ({ row }) => {
       const ptw = row.original
       const fullName = ptw.employee?.full_name || ptw.emp_id
-      return h('div', { class: 'text-slate-600 dark:text-slate-400' }, fullName)
+      const crewCount = ptw.assigned_crew ? ptw.assigned_crew.length : 0
+      
+      return h('div', { class: 'flex flex-col' }, [
+        h('span', { class: 'text-slate-900 dark:text-slate-100 font-medium' }, fullName),
+        crewCount > 1 ? h('span', { class: 'text-xs text-slate-500 dark:text-slate-400 mt-1' }, `+ ${crewCount - 1} Crew members`) : null
+      ])
     },
   },
   {
@@ -99,11 +106,11 @@ export const createColumns = (
     },
   },
   {
-    accessorKey: 'deck_location',
+    accessorKey: 'deck_location_name',
     header: 'Location',
     cell: ({ row }) => {
       const ptw = row.original
-      const locationName = ptw.deck_location || '-'
+      const locationName = ptw.deck_location_name || String(ptw.deck_location || '-')
       return h('div', { class: 'text-slate-600 dark:text-slate-400' }, locationName)
     },
   },

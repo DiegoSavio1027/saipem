@@ -157,8 +157,13 @@ def api_offshore_vessel_detail(request, vessel_id):
 def api_offshore_locations(request):
     """Manage deck locations independently (GET: all users, POST: admin only)"""
     if request.method == 'GET':
-        # Get all decks (independent, not filtered by vessel)
         locations = WorkLocation.objects.all().order_by('deck_name')
+        
+        # Filter by vessel if provided
+        vessel_id = request.query_params.get('vessel_id')
+        if vessel_id:
+            locations = locations.filter(vessels__id=vessel_id)
+            
         serializer = WorkLocationSerializer(locations, many=True)
         return Response(serializer.data)
 
@@ -239,21 +244,6 @@ def api_unassign_deck_from_vessel(request, vessel_id, deck_id):
     vessel.assigned_decks.remove(deck)
     serializer = VesselWithDecksSerializer(vessel)
     return Response(serializer.data)
-    if request.method == 'GET':
-        # Filter by vessel if provided
-        vessel_id = request.query_params.get('vessel_id')
-        if vessel_id:
-            locations = WorkLocation.objects.filter(vessel_id=vessel_id).order_by('deck_name')
-        else:
-            locations = WorkLocation.objects.all().order_by('deck_name')
-        serializer = WorkLocationSerializer(locations, many=True)
-        return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer = WorkLocationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -342,7 +332,7 @@ def api_me(request):
         # Try to get emp_id from Employee model, fallback to username
         emp_id = request.user.username  # Default to username
         try:
-            from ..hse_ptw.models import Employee
+            from hr_module.models import Employee
             # Check if employee exists with this username as emp_id
             employee = Employee.objects.filter(emp_id=request.user.username).first()
             if employee:

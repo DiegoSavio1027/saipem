@@ -22,7 +22,7 @@ class POBLog(models.Model):
     emp_id = models.CharField(max_length=50, verbose_name="Employee ID")
     deck_location = models.ForeignKey('WorkLocation', on_delete=models.PROTECT, verbose_name="Deck Location")
     action = models.CharField(max_length=3, choices=ACTION_CHOICES, verbose_name="Action")
-    # ptw field will be added in a later migration to avoid circular dependency
+    ptw = models.ForeignKey('hse_ptw.PermitToWork', on_delete=models.SET_NULL, null=True, blank=True, related_name='pob_logs')
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

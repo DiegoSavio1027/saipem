@@ -33,7 +33,7 @@ class POBConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_recent_logs(self):
         from .models import POBLog
-        from ..hse_ptw.models import Employee
+        from hr_module.models import Employee
 
         logs = POBLog.objects.all().order_by('-timestamp')[:5]
         result = []

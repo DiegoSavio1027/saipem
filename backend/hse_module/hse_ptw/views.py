@@ -5,7 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from .models import PermitToWork, Employee
+from .models import PermitToWork
+from hr_module.models import Employee
 from .serializers import PermitToWorkSerializer, EmployeeSerializer
 from ..hse_analytics.services import update_analytics_realtime
 
@@ -32,8 +33,26 @@ class EmployeeViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return all employees for HSE staff to use in PTW forms"""
-        return Employee.objects.all()
+        """Return all employees, or filter by active vessel roster if vessel_id is provided"""
+        queryset = Employee.objects.all()
+        vessel_id = self.request.query_params.get('vessel_id')
+        
+        if vessel_id:
+            from hr_module.models import Roster
+            from django.utils import timezone
+            
+            today = timezone.now().date()
+            # Find active rosters for the specified vessel on today's date
+            active_rosters = Roster.objects.filter(
+                vessel_id=vessel_id,
+                start_date__lte=today,
+                end_date__gte=today
+            )
+            # Filter employees by those who have active rosters
+            emp_ids = active_rosters.values_list('employee_id', flat=True)
+            queryset = queryset.filter(emp_id__in=emp_ids)
+            
+        return queryset
 
 
 class PermitToWorkViewSet(viewsets.ModelViewSet):
@@ -184,19 +203,39 @@ class PermitToWorkViewSet(viewsets.ModelViewSet):
         ptw.status = 'IN_PROGRESS'
         ptw.save()
 
+        # Phase 5 Integration: Update WorkOrder Status
+        if ptw.wo_id:
+            ptw.wo_id.status = 'IN_PROGRESS'
+            ptw.wo_id.save()
+
         # Auto CHECK-IN: Create POB log when PTW starts
         from ..hse_pob.models import POBLog
         from asgiref.sync import async_to_sync
         from channels.layers import get_channel_layer
 
-        location_name = ptw.deck_location or "General Area"
+        if not ptw.deck_location:
+            return Response(
+                {"error": "Cannot start work without a valid deck location."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        # Create POB Log for Applicant
         pob_log = POBLog.objects.create(
             emp_id=ptw.emp_id,
-            deck_location=location_name,
+            deck_location=ptw.deck_location,
             action='IN',
             ptw=ptw
         )
+
+        # Create POB Log for all Assigned Personnel (Crew)
+        crew_members = ptw.assigned_personnel.all()
+        for crew in crew_members:
+            POBLog.objects.create(
+                emp_id=crew.emp_id,
+                deck_location=ptw.deck_location,
+                action='IN',
+                ptw=ptw
+            )
 
         try:
             employee = Employee.objects.get(emp_id=ptw.emp_id)
@@ -212,7 +251,7 @@ class PermitToWorkViewSet(viewsets.ModelViewSet):
                 "message": {
                     "action": pob_log.action,
                     "employee_name": employee_name,
-                    "location": pob_log.deck_location,
+                    "location": pob_log.deck_location.deck_name,
                     "timestamp": pob_log.timestamp.isoformat()
                 }
             }
@@ -309,16 +348,30 @@ class PermitToWorkViewSet(viewsets.ModelViewSet):
         from asgiref.sync import async_to_sync
         from channels.layers import get_channel_layer
 
-        # Get location name from deck_location field
-        location_name = ptw.deck_location or "General Area"
+        if ptw.deck_location:
+            # Create POB log for Applicant
+            pob_log = POBLog.objects.create(
+                emp_id=ptw.emp_id,
+                deck_location=ptw.deck_location,
+                action='OUT',
+                ptw=ptw
+            )
+            
+            # Create POB log for all Assigned Personnel
+            crew_members = ptw.assigned_personnel.all()
+            for crew in crew_members:
+                POBLog.objects.create(
+                    emp_id=crew.emp_id,
+                    deck_location=ptw.deck_location,
+                    action='OUT',
+                    ptw=ptw
+                )
 
-        # Create POB log
-        pob_log = POBLog.objects.create(
-            emp_id=ptw.emp_id,
-            deck_location=location_name,
-            action='OUT',
-            ptw=ptw
-        )
+            location_name = pob_log.deck_location.deck_name
+            timestamp_iso = pob_log.timestamp.isoformat()
+        else:
+            location_name = "Unknown Location"
+            timestamp_iso = timezone.now().isoformat()
 
         # Get employee name
         try:
@@ -334,10 +387,10 @@ class PermitToWorkViewSet(viewsets.ModelViewSet):
             {
                 "type": "send_location_update",
                 "message": {
-                    "action": pob_log.action,
+                    "action": 'OUT',
                     "employee_name": employee_name,
-                    "location": pob_log.deck_location,
-                    "timestamp": pob_log.timestamp.isoformat()
+                    "location": location_name,
+                    "timestamp": timestamp_iso
                 }
             }
         )
@@ -392,6 +445,12 @@ class PermitToWorkViewSet(viewsets.ModelViewSet):
         ptw.closed_at = timezone.now()
         ptw.closing_notes = closing_notes
         ptw.save()
+
+        # Phase 5 Integration: Update WorkOrder Status
+        if ptw.wo_id:
+            ptw.wo_id.status = 'COMPLETED'
+            ptw.wo_id.completion_date = timezone.now().date()
+            ptw.wo_id.save()
 
         # Broadcast PTW closed event
         try:

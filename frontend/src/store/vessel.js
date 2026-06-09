@@ -6,7 +6,9 @@ export const vessels = ref([]);
 
 export const fetchVessels = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/offshore/vessels/`);
+        const response = await fetch(`${API_BASE_URL}/offshore/vessels/`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+        });
         if (response.ok) {
             vessels.value = await response.json();
         }

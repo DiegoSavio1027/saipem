@@ -1,6 +1,32 @@
 from django.db import models
 
 # ==========================================
+# EMPLOYEE MODEL (Relocated from hse_ptw)
+# ==========================================
+class Employee(models.Model):
+    """Employee data - linked to Django User"""
+    ROSTER_STATUS_CHOICES = [
+        ('ONBOARD', 'On Board'),
+        ('OFFBOARD', 'Off Board'),
+    ]
+
+    emp_id = models.CharField(max_length=50, unique=True, primary_key=True)
+    full_name = models.CharField(max_length=100)
+    job_role = models.CharField(max_length=100)
+    roster_status = models.CharField(max_length=50, choices=ROSTER_STATUS_CHOICES)
+    email = models.EmailField(unique=True, null=True, blank=True)
+    mcu_expiry = models.DateField(null=True, blank=True)
+    mcu_status = models.CharField(max_length=50, default="PENDING")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'hse_ptw_employee'
+
+    def __str__(self):
+        return f"{self.emp_id} - {self.full_name}"
+
+
+# ==========================================
 # POSITION MODEL (Master Posisi & Rate Gaji)
 # ==========================================
 class Position(models.Model):
@@ -21,7 +47,7 @@ class Certification(models.Model):
     """Employee certifications with expiry tracking"""
     cert_id = models.CharField(max_length=50, primary_key=True)
     cert_type = models.CharField(max_length=100)
-    employee = models.ForeignKey('hse_ptw.Employee', on_delete=models.CASCADE, related_name='certifications')
+    employee = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='certifications')
     expiry_date = models.DateField()
 
     def __str__(self):
@@ -33,7 +59,7 @@ class Certification(models.Model):
 # ==========================================
 class Roster(models.Model):
     """Employee roster schedule"""
-    employee = models.ForeignKey('hse_ptw.Employee', on_delete=models.CASCADE, related_name='rosters')
+    employee = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='rosters')
     start_date = models.DateField()
     end_date = models.DateField()
     vessel = models.ForeignKey('asset_module.Vessel', on_delete=models.CASCADE, related_name='rosters', null=True, blank=True)

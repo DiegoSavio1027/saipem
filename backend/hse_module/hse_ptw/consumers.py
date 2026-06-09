@@ -28,7 +28,8 @@ class PTWConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_recent_ptws(self):
-        from .models import PermitToWork, Employee
+        from .models import PermitToWork
+        from hr_module.models import Employee
 
         ptws = PermitToWork.objects.all().order_by('-created_at')[:5]
         result = []

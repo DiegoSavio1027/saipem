@@ -177,7 +177,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'vue-sonner';
 import { getCsrfToken } from '@/utils/csrf';
-import { authState } from '@/store/auth';
+import { authState, getAccessToken } from '@/store/auth';
 
 const props = defineProps({
   open: Boolean,
@@ -229,7 +229,11 @@ const removeImage = () => {
 
 const fetchEmployees = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/hse/employees/`, { credentials: 'include' });
+    const response = await fetch(`${API_BASE_URL}/hse/employees/`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
+    });
     if (response.ok) {
       const data = await response.json();
       employees.value = data;
@@ -248,7 +252,11 @@ const fetchLocations = async () => {
       return;
     }
     // Fetch from HSE POB module with vessel filter
-    const response = await fetch(`${API_BASE_URL}/hse/pob/work-locations/?vessel_id=${vesselId}`, { credentials: 'include' });
+    const response = await fetch(`${API_BASE_URL}/hse/pob/work-locations/?vessel_id=${vesselId}`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
+    });
     if (response.ok) {
       const data = await response.json();
       locations.value = data;
@@ -304,10 +312,10 @@ const handleSubmit = async () => {
     const response = await fetch(`${API_BASE_URL}/hse/incidents/`, {
       method: 'POST',
       headers: {
-        'X-CSRFToken': getCsrfToken() || ''
+        'X-CSRFToken': getCsrfToken() || '',
+        'Authorization': `Bearer ${getAccessToken()}`
       },
-      body: formDataToSend,
-      credentials: 'include'
+      body: formDataToSend
     });
 
     if (response.ok) {

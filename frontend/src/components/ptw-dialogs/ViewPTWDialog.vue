@@ -40,6 +40,10 @@ interface PTW {
     wo_id: string
     description: string
   }
+  assigned_crew?: {
+    emp_id: string
+    full_name: string
+  }[]
 }
 
 const props = defineProps<{
@@ -127,6 +131,16 @@ const openPrintPreview = () => {
             <div>
               <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Permit Type</p>
               <p class="text-sm text-slate-900 dark:text-slate-100">{{ ptw.permit_type_display || ptw.permit_type }}</p>
+            </div>
+            
+            <div class="col-span-2">
+              <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Assigned Crew</p>
+              <div v-if="ptw.assigned_crew && ptw.assigned_crew.length > 0" class="flex flex-wrap gap-2">
+                <span v-for="crew in ptw.assigned_crew" :key="crew.emp_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+                  {{ crew.full_name }}
+                </span>
+              </div>
+              <p v-else class="text-sm text-slate-900 dark:text-slate-100">-</p>
             </div>
 
             <div class="col-span-2">

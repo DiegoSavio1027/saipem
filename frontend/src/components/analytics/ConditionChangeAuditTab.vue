@@ -183,6 +183,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'vue-sonner';
+import { getAccessToken } from '@/store/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989/api/v1';
 
@@ -232,7 +233,9 @@ const fetchAuditLogs = async () => {
     }
 
     const response = await fetch(`${API_BASE_URL}/hse/status/history/?${params}`, {
-      credentials: 'include'
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
     });
 
     if (response.ok) {
@@ -252,7 +255,11 @@ const fetchAuditLogs = async () => {
 
 const fetchEmployees = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/hse/employees/`, { credentials: 'include' });
+    const response = await fetch(`${API_BASE_URL}/hse/employees/`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
+    });
     if (response.ok) {
       const data = await response.json();
       // Filter only Safety Officers and Admins
