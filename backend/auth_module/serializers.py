@@ -9,7 +9,7 @@ import datetime
 ROLE_MODULE_MAPPING = {
     'Admin': ['hr', 'asset', 'hse'],
     'HR Staff': ['hr'],
-    'Supervisor Engineer': ['asset'],
+    'Chief Engineer': ['asset'],
     'Worker': ['hse'],
     'Safety Officer': ['hse'],
 }

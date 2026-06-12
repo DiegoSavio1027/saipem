@@ -33,8 +33,8 @@ class EmployeeViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return all employees, or filter by active vessel roster if vessel_id is provided"""
-        queryset = Employee.objects.all()
+        """Return all employees (except Admin and HR Staff), or filter by active vessel roster if vessel_id is provided"""
+        queryset = Employee.objects.exclude(job_role__in=['Admin', 'HR Staff'])
         vessel_id = self.request.query_params.get('vessel_id')
         
         if vessel_id:

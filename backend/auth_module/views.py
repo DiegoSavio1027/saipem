@@ -134,11 +134,11 @@ def dev_quick_login_accounts(request):
             "role": "Safety Officer",
             "description": "Safety Officer - HSE Officer"
         },
-        "supervisor_engineer": {
-            "username": os.getenv('DEV_SUPERVISOR_USERNAME', 'spv_engineer'),
-            "password": os.getenv('DEV_SUPERVISOR_PASSWORD', 'spv123'),
-            "role": "Supervisor Engineer",
-            "description": "Supervisor Engineer - Engineering Supervisor"
+        "chief_engineer": {
+            "username": os.getenv('DEV_CHIEF_ENGINEER_USERNAME', 'chief_engineer'),
+            "password": os.getenv('DEV_CHIEF_ENGINEER_PASSWORD', 'chief123'),
+            "role": "Chief Engineer",
+            "description": "Chief Engineer - Engineering Chief"
         },
         "worker": {
             "username": os.getenv('DEV_WORKER_USERNAME', 'worker'),

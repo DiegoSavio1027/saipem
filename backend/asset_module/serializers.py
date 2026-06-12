@@ -8,6 +8,7 @@ from .models import (
     MaintenanceTask,
     InventoryItem
 )
+from hse_module.hse_pob.models import WorkLocation
 
 
 # ==========================================
@@ -28,10 +29,24 @@ class AssetSerializer(serializers.ModelSerializer):
     temperature = serializers.SerializerMethodField()
     rul_hours = serializers.SerializerMethodField()
     predicted_failure_date = serializers.SerializerMethodField()
+    assigned_decks = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=WorkLocation.objects.all(),
+        required=False
+    )
 
     class Meta:
         model = Asset
         fields = '__all__'
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['assigned_decks_details'] = [
+            {'id': deck.id, 'deck_name': deck.deck_name, 'risk_level': deck.risk_level}
+            for deck in instance.assigned_decks.all()
+        ]
+        return representation
+
 
     def get_vibration(self, obj):
         import random
@@ -156,10 +171,19 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
     asset_name = serializers.CharField(source='asset.name', read_only=True, allow_null=True)
     machinery_name = serializers.CharField(source='machinery.equipment_name', read_only=True, allow_null=True)
+    asset_assigned_decks = serializers.SerializerMethodField()
 
     class Meta:
         model = WorkOrder
         fields = '__all__'
+
+    def get_asset_assigned_decks(self, obj):
+        if obj.asset:
+            return [
+                {'id': deck.id, 'deck_name': deck.deck_name, 'risk_level': deck.risk_level}
+                for deck in obj.asset.assigned_decks.all()
+            ]
+        return []
 
 
 # ==========================================

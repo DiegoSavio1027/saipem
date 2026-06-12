@@ -49,13 +49,23 @@ def delete_position(request, pk):
 
 @api_view(['GET'])
 def get_all_employees(request):
-    employees = Employee.objects.all()
+    employees = Employee.objects.exclude(job_role__in=['Admin', 'HR Staff'])
     serializer = EmployeeSerializer(employees, many=True)
     return Response(serializer.data)
 
 
 @api_view(['POST'])
 def add_employee(request):
+    is_admin = request.user and request.user.is_authenticated and (
+        request.user.is_superuser or request.user.groups.filter(name='Admin').exists()
+    )
+    role = request.data.get('job_role')
+    if role in ['Admin', 'HR Staff'] and not is_admin:
+        return Response(
+            {"error": "Only Administrators are authorized to assign Admin or HR Staff roles."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     serializer = EmployeeSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -70,6 +80,16 @@ def update_employee(request, emp_id):
         employee = Employee.objects.get(emp_id=emp_id)
     except Employee.DoesNotExist:
         return Response({"error": "Crew not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    is_admin = request.user and request.user.is_authenticated and (
+        request.user.is_superuser or request.user.groups.filter(name='Admin').exists()
+    )
+    role = request.data.get('job_role')
+    if role and role != employee.job_role and role in ['Admin', 'HR Staff'] and not is_admin:
+        return Response(
+            {"error": "Only Administrators are authorized to assign Admin or HR Staff roles."},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     # partial=True memperbolehkan update sebagian kolom saja
     serializer = EmployeeSerializer(employee, data=request.data, partial=True)
@@ -228,10 +248,10 @@ def dashboard_analytics(request):
     today = datetime.date.today()
     thirty_days_later = today + datetime.timedelta(days=30)
     
-    total_crew = Employee.objects.count()
-    onboard_crew = Employee.objects.filter(roster_status='ONBOARD').count()
+    total_crew = Employee.objects.exclude(job_role__in=['Admin', 'HR Staff']).count()
+    onboard_crew = Employee.objects.exclude(job_role__in=['Admin', 'HR Staff']).filter(roster_status='ONBOARD').count()
     
-    mcu_alerts = Employee.objects.filter(
+    mcu_alerts = Employee.objects.exclude(job_role__in=['Admin', 'HR Staff']).filter(
         Q(mcu_status='EXPIRED') | 
         Q(mcu_status='UNFIT') |
         Q(mcu_expiry__lt=today) |

@@ -39,12 +39,16 @@
             </SelectTrigger>
             <SelectContent class="w-full">
               <SelectGroup>
-                <SelectItem v-for="loc in locations" :key="loc.id" :value="String(loc.id)">
+                <SelectItem v-for="loc in filteredLocations" :key="loc.id" :value="String(loc.id)">
                   {{ loc.deck_name }}
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
+          <span v-if="isLocationFilteredByAsset" class="text-[10px] text-orange-650 dark:text-orange-400 font-medium flex items-center gap-1 mt-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              Locations filtered based on the work order's target asset.
+          </span>
         </div>
 
         <div>
@@ -69,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { authState, getAccessToken } from '@/store/auth';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -89,6 +93,23 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989
 const editData = ref({ deck_location: '' });
 const isSaving = ref(false);
 const locations = ref([]);
+
+const filteredLocations = computed(() => {
+  if (!props.ptw || !props.ptw.work_order) {
+    return locations.value;
+  }
+  const wo = props.ptw.work_order;
+  if (wo.asset_assigned_decks && wo.asset_assigned_decks.length > 0) {
+    return wo.asset_assigned_decks;
+  }
+  return locations.value;
+});
+
+const isLocationFilteredByAsset = computed(() => {
+  if (!props.ptw || !props.ptw.work_order) return false;
+  const wo = props.ptw.work_order;
+  return !!(wo.asset_assigned_decks && wo.asset_assigned_decks.length > 0);
+});
 
 const fetchLocations = async () => {
   try {

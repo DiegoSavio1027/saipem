@@ -12,6 +12,42 @@
         </button>
       </div>
 
+      <!-- Stats Grid (Shadcn Cards) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Monitored Assets</CardTitle>
+            <Cpu class="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ assets.length }} Units</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">IoT signal active</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Healthy Status</CardTitle>
+            <CheckCircle class="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ healthyCount }} Units</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Operational & stable</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Critical Warnings</CardTitle>
+            <AlertTriangle class="h-4 w-4 text-red-500" :class="[criticalCount > 0 ? 'animate-pulse' : '']" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ criticalCount }} Alerts</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Require immediate maintenance</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <!-- Loading State -->
       <div v-if="isLoading" class="p-12 flex justify-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 mb-8">
         <p class="text-slate-500 dark:text-slate-400 animate-pulse">Loading data...</p>
@@ -41,7 +77,12 @@
             </div>
           </div>
           <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-0.5 uppercase tracking-tight">{{ asset.name }}</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-mono">{{ asset.vessel_name || asset.vessel }} • {{ asset.capacity }}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-mono">
+            {{ asset.vessel_name || asset.vessel }} • {{ asset.capacity }}
+            <span v-if="asset.assigned_decks_details && asset.assigned_decks_details.length > 0">
+              • {{ asset.assigned_decks_details.map(d => d.deck_name).join(', ') }}
+            </span>
+          </p>
 
           <!-- Health Score Progress Bar -->
           <div class="space-y-1.5 mb-4">
@@ -177,6 +218,30 @@
               </div>
             </div>
 
+            <!-- Assign Decks Section -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+              <label class="text-slate-400 font-bold uppercase tracking-wider block mb-2">Location (Deck Selection)</label>
+              <p class="text-[10px] text-slate-500 mb-2">Select the decks on the vessel where this asset is physically located.</p>
+              
+              <div v-if="!formData.vessel" class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-500 text-center">
+                Please select a vessel first.
+              </div>
+              <div v-else-if="availableDecks.length === 0" class="p-3 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-250 dark:border-yellow-900/50 rounded-lg text-yellow-800 dark:text-yellow-400 text-center">
+                No decks assigned to this vessel. Please assign decks to the vessel first.
+              </div>
+              <div v-else class="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-1 border border-slate-200/50 dark:border-slate-800 rounded-lg">
+                <label v-for="deck in availableDecks" :key="deck.id" class="flex items-center gap-2 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-955 rounded cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="formData.assigned_decks"
+                    :value="deck.id"
+                    class="w-3.5 h-3.5 rounded border-slate-350 text-[var(--color-saipem-tertiary)] focus:ring-[var(--color-saipem-tertiary)]"
+                  />
+                  <span class="text-[11px] text-slate-800 dark:text-slate-200 font-medium">{{ deck.deck_name }}</span>
+                </label>
+              </div>
+            </div>
+
             <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
               <button type="button" @click="closeModal" class="px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition font-bold">
                 Cancel
@@ -194,10 +259,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
-import { Plus, Edit, Trash2, Gauge, Thermometer } from '@lucide/vue'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Plus, Edit, Trash2, Gauge, Thermometer, Cpu, CheckCircle, AlertTriangle } from '@lucide/vue'
 import { authState } from '@/store/auth'
 import { vessels, fetchVessels } from '@/store/vessel'
 import { toast } from 'vue-sonner'
@@ -208,6 +274,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989
 const isLoading = ref(false)
 const assets = ref([])
 const showModal = ref(false)
+
+const healthyCount = computed(() => assets.value.filter(a => a.status === 'OPERATIONAL').length)
+const criticalCount = computed(() => assets.value.filter(a => a.status === 'CRITICAL' || a.status === 'MAINTENANCE').length)
 const isEditMode = ref(false)
 
 const formData = ref({
@@ -217,7 +286,31 @@ const formData = ref({
   capacity: '50 Pax',
   icon: 'fa-ship text-red-500',
   status: 'OPERATIONAL',
-  health_score: 100
+  health_score: 100,
+  assigned_decks: []
+})
+
+const availableDecks = ref([])
+
+const fetchDecksForSelectedVessel = async (vesselId) => {
+  if (!vesselId) {
+    availableDecks.value = []
+    return
+  }
+  try {
+    const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+    const response = await fetch(`${API_BASE_URL}/offshore/locations/?vessel_id=${vesselId}`, { headers })
+    if (response.ok) {
+      availableDecks.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Error fetching decks for vessel:', error)
+    availableDecks.value = []
+  }
+}
+
+watch(() => formData.value.vessel, (newVesselId) => {
+  fetchDecksForSelectedVessel(newVesselId)
 })
 
 const fetchAssets = async () => {
@@ -249,7 +342,8 @@ const openAddModal = () => {
     capacity: '50 Pax',
     icon: 'fa-ship text-red-500',
     status: 'OPERATIONAL',
-    health_score: 100
+    health_score: 100,
+    assigned_decks: []
   }
   showModal.value = true
 }
@@ -263,7 +357,8 @@ const openEditModal = (asset) => {
     capacity: asset.capacity,
     icon: asset.icon || 'fa-ship text-red-500',
     status: asset.status,
-    health_score: asset.health_score
+    health_score: asset.health_score,
+    assigned_decks: asset.assigned_decks || []
   }
   showModal.value = true
 }

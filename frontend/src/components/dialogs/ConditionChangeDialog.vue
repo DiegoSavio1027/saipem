@@ -109,6 +109,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'vue-sonner';
 import { getCsrfToken } from '@/utils/csrf';
+import { getAccessToken } from '@/store/auth';
 
 const props = defineProps({
   open: Boolean,
@@ -135,7 +136,8 @@ const handleSubmit = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': getCsrfToken() || ''
+        'X-CSRFToken': getCsrfToken() || '',
+        'Authorization': `Bearer ${getAccessToken()}`
       },
       body: JSON.stringify({
         status: selectedStatus.value,

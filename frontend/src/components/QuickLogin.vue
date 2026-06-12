@@ -43,7 +43,7 @@ onMounted(async () => {
                     { id: 'admin', ...data.accounts.admin },
                     { id: 'hr_staff', ...data.accounts.hr_staff },
                     { id: 'safety_officer', ...data.accounts.safety_officer },
-                    { id: 'supervisor_engineer', ...data.accounts.supervisor_engineer },
+                    { id: 'chief_engineer', ...data.accounts.chief_engineer },
                     { id: 'worker', ...data.accounts.worker }
                 ];
                 showQuickLogin.value = true;

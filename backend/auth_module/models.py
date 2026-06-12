@@ -18,9 +18,9 @@ class UserProfile(models.Model):
         max_length=20,
         choices=[
             ('ONBOARD', 'On Board'),
-            ('OFFBOARD', 'Off Board'),
+            ('AVAILABLE', 'Available'),
         ],
-        default='ONBOARD'
+        default='AVAILABLE'
     )
 
     # Medical Information

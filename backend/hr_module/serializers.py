@@ -7,9 +7,19 @@ from .models import Roster, VesselActivity, Position, Certification
 # 1. EMPLOYEE SERIALIZER
 # ==========================================
 class EmployeeSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = Employee
         fields = '__all__'
+
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        employee = Employee(**validated_data)
+        if password:
+            employee._password = password
+        employee.save()
+        return employee
 
 
 # ==========================================

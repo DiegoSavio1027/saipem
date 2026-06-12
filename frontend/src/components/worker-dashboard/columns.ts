@@ -68,11 +68,11 @@ export const createWorkerColumns = (
     },
   },
   {
-    accessorKey: 'deck_location',
+    accessorKey: 'deck_location_name',
     header: 'Location',
     cell: ({ row }) => {
       const ptw = row.original
-      const locationName = ptw.deck_location || '-'
+      const locationName = ptw.deck_location_name || ptw.deck_location || '-'
       return h('div', { class: 'text-slate-600 dark:text-slate-400' }, locationName)
     },
   },

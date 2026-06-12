@@ -122,12 +122,16 @@
                   </SelectTrigger>
                   <SelectContent class="w-full">
                       <SelectGroup>
-                          <SelectItem v-for="loc in locations" :key="loc.id" :value="String(loc.id)">
+                          <SelectItem v-for="loc in filteredLocations" :key="loc.id" :value="String(loc.id)">
                               {{ loc.deck_name }}
                           </SelectItem>
                       </SelectGroup>
                   </SelectContent>
               </Select>
+              <span v-if="isLocationFilteredByAsset" class="text-[10px] text-orange-600 dark:text-orange-400 font-medium flex items-center gap-1 mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  Locations filtered and auto-selected based on the work order's target asset.
+              </span>
           </div>
           <div class="space-y-2">
               <Label for="wo_id">Work Order <span class="text-red-500">*</span></Label>
@@ -232,6 +236,32 @@ const selectedApplicantData = computed(() =>
 const selectedWorkOrderData = computed(() =>
   workOrders.value.find(wo => wo.wo_id === selectedWorkOrder.value),
 );
+
+const filteredLocations = computed(() => {
+    if (!selectedWorkOrder.value) {
+        return locations.value;
+    }
+    const selectedWO = workOrders.value.find(wo => wo.wo_id === selectedWorkOrder.value);
+    if (selectedWO && selectedWO.asset_assigned_decks && selectedWO.asset_assigned_decks.length > 0) {
+        return selectedWO.asset_assigned_decks;
+    }
+    return locations.value;
+});
+
+const isLocationFilteredByAsset = computed(() => {
+    if (!selectedWorkOrder.value) return false;
+    const selectedWO = workOrders.value.find(wo => wo.wo_id === selectedWorkOrder.value);
+    return !!(selectedWO && selectedWO.asset_assigned_decks && selectedWO.asset_assigned_decks.length > 0);
+});
+
+watch(selectedWorkOrder, (newWoId) => {
+    if (newWoId) {
+        const selectedWO = workOrders.value.find(wo => wo.wo_id === newWoId);
+        if (selectedWO && selectedWO.asset_assigned_decks && selectedWO.asset_assigned_decks.length > 0) {
+            formData.value.deck_location = String(selectedWO.asset_assigned_decks[0].id);
+        }
+    }
+});
 
 const currentUserDisplay = computed(() => {
     const currentUser = availableUsers.value.find(emp => emp.emp_id === props.username);

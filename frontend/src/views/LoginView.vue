@@ -12,13 +12,13 @@ const router = useRouter();
 const onLoginSuccess = (userData) => {
     setAuthData(userData);
 
-    // Redirect based on user role
+    // Redirect based on role or accessible modules
     if (userData.role === 'Admin') {
         router.push('/');
-    } else if (userData.role === 'Worker') {
-        router.push('/hse');
-    } else if (userData.role === 'Safety Officer') {
-        router.push('/hse');
+    } else if (userData.accessible_modules && userData.accessible_modules.includes('hr')) {
+        router.push('/hr');
+    } else if (userData.accessible_modules && userData.accessible_modules.includes('asset')) {
+        router.push('/assets/dashboard');
     } else {
         router.push('/hse');
     }

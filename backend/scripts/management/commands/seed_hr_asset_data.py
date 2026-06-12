@@ -1,8 +1,9 @@
 from django.core.management.base import BaseCommand
-from datetime import date
+from datetime import date, timedelta
 from hr_module.models import Employee
-from asset_module.models import Vessel, Asset, MaintenanceTask, InventoryItem, MachineryEquipment
+from asset_module.models import Vessel, Asset, MaintenanceTask, InventoryItem, MachineryEquipment, WorkOrder
 from hr_module.models import Roster, VesselActivity, Position
+from hse_module.hse_pob.models import WorkLocation
 
 
 class Command(BaseCommand):
@@ -17,36 +18,40 @@ class Command(BaseCommand):
         self.stdout.write("\n[1/8] Creating Employees...")
         employees_data = [
             {
-                'emp_id': 'EMP-001',
-                'full_name': 'Rick Owens',
+                'emp_id': 'chief_engineer',
+                'full_name': 'Johan Branson',
                 'job_role': 'Chief Engineer',
                 'mcu_status': 'FIT',
                 'mcu_expiry': date(2027, 12, 31),
-                'roster_status': 'ONBOARD'
+                'roster_status': 'ONBOARD',
+                'email': 'chief@saipem.com'
             },
             {
-                'emp_id': 'EMP-002',
-                'full_name': 'Martin Margiela',
-                'job_role': 'HSE Officer',
+                'emp_id': 'safety_officer',
+                'full_name': 'Diego Savio',
+                'job_role': 'Safety Officer',
                 'mcu_status': 'FIT',
                 'mcu_expiry': date(2027, 6, 30),
-                'roster_status': 'ONBOARD'
+                'roster_status': 'ONBOARD',
+                'email': 'safety@saipem.com'
             },
             {
-                'emp_id': 'EMP-003',
-                'full_name': 'Fakemink',
-                'job_role': 'Lead Welder',
+                'emp_id': 'worker',
+                'full_name': 'Aron Piper',
+                'job_role': 'Worker',
                 'mcu_status': 'FIT',
                 'mcu_expiry': date(2027, 9, 15),
-                'roster_status': 'ONBOARD'
+                'roster_status': 'ONBOARD',
+                'email': 'worker@saipem.com'
             },
             {
-                'emp_id': 'EMP-004',
-                'full_name': 'Lancey Foux',
-                'job_role': 'Logistics Manager',
+                'emp_id': 'hr_staff',
+                'full_name': 'Ijlal Nuhlan',
+                'job_role': 'HR Staff',
                 'mcu_status': 'FIT',
                 'mcu_expiry': date(2027, 3, 20),
-                'roster_status': 'ONBOARD'
+                'roster_status': 'AVAILABLE',
+                'email': 'hr@saipem.com'
             },
             {
                 'emp_id': 'EMP-005',
@@ -54,7 +59,8 @@ class Command(BaseCommand):
                 'job_role': 'Deck Foreman',
                 'mcu_status': 'FIT',
                 'mcu_expiry': date(2027, 11, 10),
-                'roster_status': 'ONBOARD'
+                'roster_status': 'ONBOARD',
+                'email': 'skepta@saipem.com'
             },
             {
                 'emp_id': 'EMP-006',
@@ -62,7 +68,8 @@ class Command(BaseCommand):
                 'job_role': 'Rig Manager',
                 'mcu_status': 'FIT',
                 'mcu_expiry': date(2027, 8, 5),
-                'roster_status': 'ONBOARD'
+                'roster_status': 'AVAILABLE',
+                'email': 'yohji@saipem.com'
             },
             {
                 'emp_id': 'EMP-007',
@@ -70,25 +77,27 @@ class Command(BaseCommand):
                 'job_role': 'Scaffolder',
                 'mcu_status': 'FIT',
                 'mcu_expiry': date(2027, 7, 22),
-                'roster_status': 'ONBOARD'
+                'roster_status': 'AVAILABLE',
+                'email': 'raf@saipem.com'
             }
         ]
 
         for emp_data in employees_data:
-            employee, created = Employee.objects.get_or_create(
+            employee, created = Employee.objects.update_or_create(
                 emp_id=emp_data['emp_id'],
                 defaults={
                     'full_name': emp_data['full_name'],
                     'job_role': emp_data['job_role'],
                     'mcu_status': emp_data['mcu_status'],
                     'mcu_expiry': emp_data['mcu_expiry'],
-                    'roster_status': emp_data['roster_status']
+                    'roster_status': emp_data['roster_status'],
+                    'email': emp_data['email']
                 }
             )
             if created:
                 self.stdout.write(f"✓ Created employee: {employee.emp_id} - {employee.full_name}")
             else:
-                self.stdout.write(f"- Employee already exists: {employee.emp_id}")
+                self.stdout.write(f"✓ Updated employee: {employee.emp_id} - {employee.full_name}")
 
         self.stdout.write(f"\n✓ Total employees: {Employee.objects.count()}")
 
@@ -119,6 +128,7 @@ class Command(BaseCommand):
         ]
 
         vessels = {}
+        all_decks = list(WorkLocation.objects.all())
         for vessel_data in vessels_data:
             vessel, created = Vessel.objects.get_or_create(
                 vessel_name=vessel_data['vessel_name'],
@@ -130,8 +140,13 @@ class Command(BaseCommand):
                 }
             )
             vessels[vessel_data['vessel_name']] = vessel
+            
+            # Link all standard decks to this vessel
+            if all_decks:
+                vessel.assigned_decks.add(*all_decks)
+                
             if created:
-                self.stdout.write(f"✓ Created vessel: {vessel.vessel_name} ({vessel.vessel_type})")
+                self.stdout.write(f"✓ Created vessel: {vessel.vessel_name} ({vessel.vessel_type}) and linked {len(all_decks)} decks")
             else:
                 self.stdout.write(f"- Vessel already exists: {vessel.vessel_name}")
 
@@ -147,7 +162,8 @@ class Command(BaseCommand):
                 'name': 'Main Crane',
                 'capacity': '500 Ton',
                 'status': 'OPERATIONAL',
-                'health_score': 95
+                'health_score': 95,
+                'deck_name': 'Main Deck'
             },
             {
                 'asset_id': 'AST-004',
@@ -155,7 +171,8 @@ class Command(BaseCommand):
                 'name': 'Helideck Safety System',
                 'capacity': 'Standard',
                 'status': 'CRITICAL',
-                'health_score': 30
+                'health_score': 30,
+                'deck_name': 'Heli Deck'
             },
             {
                 'asset_id': 'AST-005',
@@ -163,7 +180,8 @@ class Command(BaseCommand):
                 'name': 'Pipe Laying Tensioner',
                 'capacity': '250 Ton',
                 'status': 'MAINTENANCE',
-                'health_score': 75
+                'health_score': 75,
+                'deck_name': 'Main Deck'
             },
             {
                 'asset_id': 'AST-006',
@@ -171,7 +189,8 @@ class Command(BaseCommand):
                 'name': 'Lifeboat Station A',
                 'capacity': '50 Pax',
                 'status': 'OPERATIONAL',
-                'health_score': 100
+                'health_score': 100,
+                'deck_name': 'Upper Deck'
             },
             # Castorone
             {
@@ -180,7 +199,8 @@ class Command(BaseCommand):
                 'name': 'Auxiliary Crane',
                 'capacity': '300 Ton',
                 'status': 'OPERATIONAL',
-                'health_score': 92
+                'health_score': 92,
+                'deck_name': 'Main Deck'
             },
             {
                 'asset_id': 'AST-007',
@@ -188,7 +208,8 @@ class Command(BaseCommand):
                 'name': 'Stinger Control System',
                 'capacity': 'Standard',
                 'status': 'CRITICAL',
-                'health_score': 20
+                'health_score': 20,
+                'deck_name': 'Main Deck'
             },
             {
                 'asset_id': 'AST-008',
@@ -196,7 +217,8 @@ class Command(BaseCommand):
                 'name': 'Ballast Control Console',
                 'capacity': 'Standard',
                 'status': 'OPERATIONAL',
-                'health_score': 98
+                'health_score': 98,
+                'deck_name': 'Engine Room'
             },
             # Scarabeo 8
             {
@@ -205,7 +227,8 @@ class Command(BaseCommand):
                 'name': 'Drilling Equipment',
                 'capacity': '150 Ton',
                 'status': 'OPERATIONAL',
-                'health_score': 90
+                'health_score': 90,
+                'deck_name': 'Machinery Space'
             },
             {
                 'asset_id': 'AST-009',
@@ -213,7 +236,8 @@ class Command(BaseCommand):
                 'name': 'Blowout Preventer (BOP)',
                 'capacity': '10k PSI',
                 'status': 'CRITICAL',
-                'health_score': 15
+                'health_score': 15,
+                'deck_name': 'Lower Deck'
             },
             {
                 'asset_id': 'AST-010',
@@ -221,7 +245,8 @@ class Command(BaseCommand):
                 'name': 'Top Drive System',
                 'capacity': '800 HP',
                 'status': 'MAINTENANCE',
-                'health_score': 60
+                'health_score': 60,
+                'deck_name': 'Main Deck'
             }
         ]
 
@@ -240,10 +265,17 @@ class Command(BaseCommand):
                     }
                 )
                 assets[asset_data['asset_id']] = asset
+                
+                # Link deck location to this asset
+                if asset_data['deck_name']:
+                    deck = WorkLocation.objects.filter(deck_name=asset_data['deck_name']).first()
+                    if deck:
+                        asset.assigned_decks.add(deck)
+                        
                 if created:
-                    self.stdout.write(f"✓ Created asset: {asset.asset_id} - {asset.name} on {vessel.vessel_name}")
+                    self.stdout.write(f"✓ Created asset: {asset.asset_id} - {asset.name} on {vessel.vessel_name} (Location: {asset_data['deck_name']})")
                 else:
-                    self.stdout.write(f"✓ Updated asset: {asset.asset_id} - {asset.name} on {vessel.vessel_name}")
+                    self.stdout.write(f"✓ Updated asset: {asset.asset_id} - {asset.name} on {vessel.vessel_name} (Location: {asset_data['deck_name']})")
             except KeyError:
                 self.stdout.write(self.style.WARNING(f"⚠ Vessel {asset_data['vessel_name']} not found for asset {asset_data['asset_id']}"))
 
@@ -314,15 +346,18 @@ class Command(BaseCommand):
 
         # STEP 5: Create Rosters (linked to Vessels, not Assets)
         self.stdout.write("\n[5/8] Creating Roster Schedules...")
+        # Clear existing rosters to prevent duplicate get_or_create errors
+        Roster.objects.all().delete()
+        
         rosters_data = [
             {
-                'emp_id': 'EMP-001',
+                'emp_id': 'chief_engineer',
                 'vessel_name': 'Saipem 7000',
                 'start_date': date(2026, 5, 1),
                 'end_date': date(2026, 6, 15)
             },
             {
-                'emp_id': 'EMP-003',
+                'emp_id': 'worker',
                 'vessel_name': 'Saipem 7000',
                 'start_date': date(2026, 5, 10),
                 'end_date': date(2026, 6, 20)
@@ -334,7 +369,7 @@ class Command(BaseCommand):
                 'end_date': date(2026, 7, 1)
             },
             {
-                'emp_id': 'EMP-002',
+                'emp_id': 'safety_officer',
                 'vessel_name': 'Saipem 7000',
                 'start_date': date(2026, 6, 1),
                 'end_date': date(2026, 6, 30)
@@ -363,6 +398,9 @@ class Command(BaseCommand):
 
         # STEP 6: Create Vessel Activities
         self.stdout.write("\n[6/8] Creating Vessel Activities...")
+        # Clear existing activities to prevent duplicate get_or_create errors
+        VesselActivity.objects.all().delete()
+        
         activities_data = [
             {
                 'vessel_name': 'Saipem 7000',
@@ -482,7 +520,7 @@ class Command(BaseCommand):
                 'scheduled_date': date(2026, 6, 1),
                 'status': 'PENDING',
                 'priority': 'CRITICAL',
-                'assigned_crew_id': 'EMP-001'
+                'assigned_crew_id': 'chief_engineer'
             },
             {
                 'task_id': 'MT-002',
@@ -509,7 +547,7 @@ class Command(BaseCommand):
                 'scheduled_date': date(2026, 6, 15),
                 'status': 'PENDING',
                 'priority': 'CRITICAL',
-                'assigned_crew_id': 'EMP-002'
+                'assigned_crew_id': 'safety_officer'
             }
         ]
 
@@ -648,6 +686,205 @@ class Command(BaseCommand):
 
         self.stdout.write(f"\n✓ Total machinery equipment: {MachineryEquipment.objects.count()}")
 
+        # STEP 10: Create Work Orders (linked to Vessel, Asset, and Machinery)
+        self.stdout.write("\n[10/10] Creating Work Orders...")
+        # Clear existing work orders to prevent duplicate key/conflict errors
+        WorkOrder.objects.all().delete()
+
+        work_orders_data = [
+            # Saipem 7000
+            {
+                'wo_id': 'WO-2024-001',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': 'GEN-S7000-001', # Main Generator A
+                'asset_id': None,
+                'description': 'Engine Room Maintenance - Routine inspection and lubrication of Main Generator A',
+                'priority': 'MEDIUM',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=1),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-002',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': None,
+                'asset_id': 'AST-005', # Pipe Laying Tensioner
+                'description': 'Pipe Laying Tensioner Maintenance - Painting and rust prevention',
+                'priority': 'MEDIUM',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=2),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-003',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': 'PMP-S7000-001', # Main Ballast Pump 1
+                'asset_id': None,
+                'description': 'Confined Space Entry - Ballast tank inspection and Main Ballast Pump 1 check',
+                'priority': 'HIGH',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=3),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-004',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': None,
+                'asset_id': 'AST-005', # Pipe Laying Tensioner
+                'description': 'Hot Work - Welding repair on Pipe Laying Tensioner structure',
+                'priority': 'HIGH',
+                'status': 'IN_PROGRESS',
+                'scheduled_date': date.today() + timedelta(days=1),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-005',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': None,
+                'asset_id': 'AST-004', # Helideck Safety System
+                'description': 'Working at Height - Helideck Safety net and structure replacement',
+                'priority': 'MEDIUM',
+                'status': 'IN_PROGRESS',
+                'scheduled_date': date.today(),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-006',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': 'GEN-S7000-002', # Main Generator B
+                'asset_id': None,
+                'description': 'Electrical Isolation - Generator switchboard and Main Generator B maintenance',
+                'priority': 'CRITICAL',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=5),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-007',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': None,
+                'asset_id': 'AST-001', # Main Crane
+                'description': 'Scaffolding Erection - Access to Main Crane upper cabin equipment',
+                'priority': 'MEDIUM',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=4),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-008',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': None,
+                'asset_id': 'AST-001', # Main Crane
+                'description': 'Main Crane Inspection - Load testing and structural safety certification',
+                'priority': 'CRITICAL',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=6),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-009',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': 'GEN-S7000-001', # Main Generator A
+                'asset_id': None,
+                'description': 'Main Generator A Overhaul - Oil change, filter replacement, and valve check',
+                'priority': 'HIGH',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=7),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-010',
+                'vessel_name': 'Saipem 7000',
+                'machinery_serial': None,
+                'asset_id': 'AST-004', # Helideck Safety System
+                'description': 'Helideck Safety Net Replacement - Guard rails and safety net installation',
+                'priority': 'MEDIUM',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=3),
+                'created_by': 'chief_engineer'
+            },
+            # Castorone
+            {
+                'wo_id': 'WO-2024-011',
+                'vessel_name': 'Castorone',
+                'machinery_serial': None,
+                'asset_id': 'AST-002', # Auxiliary Crane
+                'description': 'Auxiliary Crane Hydraulic Cylinder Repair - Seal replacement and system flush',
+                'priority': 'HIGH',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=1),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-012',
+                'vessel_name': 'Castorone',
+                'machinery_serial': 'HPU-CAST-001', # Hydraulic Power Unit A
+                'asset_id': None,
+                'description': 'Hydraulic Power Unit A Maintenance - Overheating diagnostics and filter change',
+                'priority': 'CRITICAL',
+                'status': 'IN_PROGRESS',
+                'scheduled_date': date.today(),
+                'created_by': 'chief_engineer'
+            },
+            # Scarabeo 8
+            {
+                'wo_id': 'WO-2024-013',
+                'vessel_name': 'Scarabeo 8',
+                'machinery_serial': None,
+                'asset_id': 'AST-009', # Blowout Preventer (BOP)
+                'description': 'BOP Testing - Pressure testing of blowout preventer valves',
+                'priority': 'CRITICAL',
+                'status': 'PENDING',
+                'scheduled_date': date.today() + timedelta(days=2),
+                'created_by': 'chief_engineer'
+            },
+            {
+                'wo_id': 'WO-2024-014',
+                'vessel_name': 'Scarabeo 8',
+                'machinery_serial': 'PMP-SCAR-001', # Drill Mud Pump A
+                'asset_id': None,
+                'description': 'Drill Mud Pump A Overhaul - Seal inspection and impeller replacement',
+                'priority': 'HIGH',
+                'status': 'IN_PROGRESS',
+                'scheduled_date': date.today(),
+                'created_by': 'chief_engineer'
+            }
+        ]
+
+        for wo_data in work_orders_data:
+            try:
+                vessel = vessels[wo_data['vessel_name']]
+                
+                asset = None
+                if wo_data['asset_id']:
+                    asset = Asset.objects.get(asset_id=wo_data['asset_id'])
+                
+                machinery = None
+                if wo_data['machinery_serial']:
+                    machinery = MachineryEquipment.objects.get(serial_number=wo_data['machinery_serial'])
+                
+                wo, created = WorkOrder.objects.get_or_create(
+                    wo_id=wo_data['wo_id'],
+                    defaults={
+                        'vessel': vessel,
+                        'asset': asset,
+                        'machinery': machinery,
+                        'description': wo_data['description'],
+                        'priority': wo_data['priority'],
+                        'status': wo_data['status'],
+                        'scheduled_date': wo_data['scheduled_date'],
+                        'created_by': wo_data['created_by']
+                    }
+                )
+                if created:
+                    self.stdout.write(f"✓ Created work order: {wo.wo_id} ({wo.priority}) on {vessel.vessel_name}")
+                else:
+                    self.stdout.write(f"- Work order already exists: {wo.wo_id}")
+            except (KeyError, Asset.DoesNotExist, MachineryEquipment.DoesNotExist) as e:
+                self.stdout.write(self.style.WARNING(f"⚠ Error creating work order {wo_data['wo_id']}: {str(e)}"))
+
+        self.stdout.write(f"\n✓ Total work orders: {WorkOrder.objects.count()}")
+
         # SUMMARY
         self.stdout.write("\n" + "=" * 70)
         self.stdout.write(self.style.SUCCESS("✅ SEEDING COMPLETE!"))
@@ -661,5 +898,6 @@ class Command(BaseCommand):
         self.stdout.write(f"✓ Inventory Items: {InventoryItem.objects.count()}")
         self.stdout.write(f"✓ Maintenance Tasks: {MaintenanceTask.objects.count()}")
         self.stdout.write(f"✓ Machinery Equipment: {MachineryEquipment.objects.count()}")
+        self.stdout.write(f"✓ Work Orders: {WorkOrder.objects.count()}")
         self.stdout.write("=" * 70)
         self.stdout.write(self.style.SUCCESS("🚀 Ready for testing!"))

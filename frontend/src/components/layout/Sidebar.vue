@@ -20,11 +20,6 @@
 
     <!-- Navigation -->
     <nav class="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden" :class="isCollapsed ? 'px-2' : ''">
-      <div v-if="!isCollapsed" class="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
-        HSE DEPARTMENT
-      </div>
-      <div v-else class="h-4 mb-2"></div>
-
       <!-- Admin Dashboard - Admin only -->
       <router-link v-if="userRole === 'Admin'" to="/" exact-active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Admin Dashboard' : ''">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--color-saipem-tertiary)] shrink-0">
@@ -33,37 +28,44 @@
         <span v-if="!isCollapsed">Admin Dashboard</span>
       </router-link>
 
-      <!-- HSE Command Center -->
-      <router-link to="/hse" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'HSE Command Center' : ''">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--color-saipem-tertiary)] shrink-0">
-          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
-        </svg>
-        <span v-if="!isCollapsed">HSE Command Center</span>
-      </router-link>
+      <div v-if="hasHseAccess" class="space-y-2">
+        <div v-if="!isCollapsed" class="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+          HSE DEPARTMENT
+        </div>
+        <div v-else class="h-4 mb-2"></div>
 
-      <!-- Live POB Tracking -->
-      <router-link to="/hse/live-pob" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Live POB Tracking' : ''">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span v-if="!isCollapsed">Live POB Tracking</span>
-      </router-link>
+        <!-- HSE Dashboard -->
+        <router-link to="/hse" exact-active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'HSE Dashboard' : ''">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--color-saipem-tertiary)] shrink-0">
+            <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+          </svg>
+          <span v-if="!isCollapsed">HSE Dashboard</span>
+        </router-link>
 
-      <!-- Permit To Work -->
-      <router-link to="/hse/ptw" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Permit To Work' : ''">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        <span v-if="!isCollapsed">Permit To Work</span>
-      </router-link>
+        <!-- Live POB Tracking -->
+        <router-link to="/hse/live-pob" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Live POB Tracking' : ''">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span v-if="!isCollapsed">Live POB Tracking</span>
+        </router-link>
 
-      <!-- HSE Incidents -->
-      <router-link to="/hse/incidents" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'HSE Incidents' : ''">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-        <span v-if="!isCollapsed">HSE Incidents</span>
-      </router-link>
+        <!-- Permit To Work -->
+        <router-link to="/hse/ptw" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Permit To Work' : ''">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span v-if="!isCollapsed">Permit To Work</span>
+        </router-link>
 
-      <!-- Analytics & Reports - Admin and Safety Officer only -->
-      <router-link v-if="userRole === 'Admin' || userRole === 'Safety Officer'" to="/hse/analytics" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Analytics & Reports' : ''">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
-        <span v-if="!isCollapsed">Analytics & Reports</span>
-      </router-link>
+        <!-- HSE Incidents -->
+        <router-link to="/hse/incidents" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'HSE Incidents' : ''">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          <span v-if="!isCollapsed">HSE Incidents</span>
+        </router-link>
+
+        <!-- Analytics & Reports - Admin and Safety Officer only -->
+        <router-link v-if="userRole === 'Admin' || userRole === 'Safety Officer'" to="/hse/analytics" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Analytics & Reports' : ''">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
+          <span v-if="!isCollapsed">Analytics & Reports</span>
+        </router-link>
+      </div>
 
       <!-- Master Data Management - Admin and Safety Officer -->
       <div v-if="userRole === 'Admin' || userRole === 'Safety Officer'" class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
@@ -98,6 +100,14 @@
         </div>
         <div v-else class="h-4 mb-2"></div>
 
+        <!-- HR Dashboard -->
+        <router-link to="/hr" exact-active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'HR Dashboard' : ''">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--color-saipem-tertiary)] shrink-0">
+            <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+          </svg>
+          <span v-if="!isCollapsed">HR Dashboard</span>
+        </router-link>
+
         <!-- Personnel -->
         <router-link to="/hr/personnel" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Personnel' : ''">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -123,6 +133,14 @@
           ASSET MANAGEMENT
         </div>
         <div v-else class="h-4 mb-2"></div>
+
+        <!-- Asset Dashboard -->
+        <router-link to="/assets/dashboard" exact-active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Asset Dashboard' : ''">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--color-saipem-tertiary)] shrink-0">
+            <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+          </svg>
+          <span v-if="!isCollapsed">Asset Dashboard</span>
+        </router-link>
 
         <!-- Work Orders -->
         <router-link to="/assets/work-orders" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Work Orders' : ''">
@@ -157,8 +175,8 @@ defineProps({
     isCollapsed: Boolean
 });
 
-const username = authState.username;
-const userRole = authState.userRole;
+const username = computed(() => authState.username);
+const userRole = computed(() => authState.userRole);
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989/api/v1';
 const currentEmployee = ref(null);
@@ -166,20 +184,24 @@ const currentEmployee = ref(null);
 const userDisplayName = computed(() => {
     // Use first_name + last_name from auth state if available
     if (authState.userData?.first_name && authState.userData?.last_name) {
-        return `${authState.userData.first_name} ${authState.userData.last_name} (${username})`;
+        return `${authState.userData.first_name} ${authState.userData.last_name} (${authState.username})`;
     }
-    return username;
+    return authState.username;
 });
 
 const userInitial = computed(() => {
     if (authState.userData?.first_name) {
         return authState.userData.first_name.charAt(0).toUpperCase();
     }
-    return username ? username.charAt(0).toUpperCase() : 'U';
+    return authState.username ? authState.username.charAt(0).toUpperCase() : 'U';
 });
 
 const currentLogo = computed(() => {
     return themeState.isDark ? logoLight : logoDark;
+});
+
+const hasHseAccess = computed(() => {
+    return authState.accessibleModules && authState.accessibleModules.includes('hse');
 });
 
 const hasHRAccess = computed(() => {

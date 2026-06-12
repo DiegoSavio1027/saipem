@@ -19,45 +19,51 @@ const routes = [
         path: '/hse',
         name: 'HSEDashboard',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiredModule: 'hse' }
     },
     {
         path: '/hse/live-pob',
         name: 'LivePob',
         component: () => import('@/views/LivePobView.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiredModule: 'hse' }
     },
     {
         path: '/hse/ptw',
         name: 'Ptw',
         component: () => import('@/views/PtwView.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiredModule: 'hse' }
     },
     {
         path: '/hse/incidents',
         name: 'Incidents',
         component: () => import('@/views/IncidentsView.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiredModule: 'hse' }
     },
     {
         path: '/offshore/locations',
         name: 'WorkLocation',
         component: () => import('@/views/WorkLocationView.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiredModule: 'hse' }
     },
     {
         path: '/hse/analytics',
         name: 'Analytics',
         component: () => import('@/views/AnalyticsView.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiredModule: 'hse' }
     },
     {
         path: '/hse/permit-print/:id',
         name: 'PermitPrint',
         component: () => import('@/views/PermitPrintView.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiredModule: 'hse' }
     },
     // HR Module Routes
+    {
+        path: '/hr',
+        name: 'HRDashboard',
+        component: () => import('@/views/hr/HRDashboardView.vue'),
+        meta: { requiresAuth: true, requiredModule: 'hr' }
+    },
     {
         path: '/hr/personnel',
         name: 'HRPersonnel',
@@ -91,6 +97,12 @@ const routes = [
     },
     // Asset Module Routes
     {
+        path: '/assets/dashboard',
+        name: 'AssetsDashboard',
+        component: () => import('@/views/AssetsDashboardView.vue'),
+        meta: { requiresAuth: true, requiredModule: 'asset' }
+    },
+    {
         path: '/assets',
         name: 'Assets',
         component: () => import('@/views/AssetsView.vue'),
@@ -115,6 +127,25 @@ const router = createRouter({
     routes
 });
 
+function getDefaultRoute() {
+    if (!authState.isLoggedIn) {
+        return '/login';
+    }
+    if (authState.userRole === 'Admin') {
+        return '/';
+    }
+    if (authState.accessibleModules && authState.accessibleModules.includes('hr')) {
+        return '/hr';
+    }
+    if (authState.accessibleModules && authState.accessibleModules.includes('asset')) {
+        return '/assets/dashboard';
+    }
+    if (authState.accessibleModules && authState.accessibleModules.includes('hse')) {
+        return '/hse';
+    }
+    return '/login';
+}
+
 router.beforeEach(async (to, from, next) => {
     // If auth state is not checked yet (e.g. initial load), check it
     if (authState.isAuthChecking) {
@@ -126,35 +157,21 @@ router.beforeEach(async (to, from, next) => {
     if (to.meta.requiresAuth && !isAuthenticated) {
         next('/login');
     } else if (to.meta.requiresGuest && isAuthenticated) {
-        // Redirect authenticated users to their home page based on role
-        if (authState.userRole === 'Admin') {
-            next('/');
-        } else {
-            next('/hse');
-        }
+        // Redirect authenticated users to their home page based on role/modules
+        next(getDefaultRoute());
     } else if (to.meta.requiredModule) {
         // Check if user has access to the required module
         const hasAccess = authState.accessibleModules &&
                          authState.accessibleModules.includes(to.meta.requiredModule);
         if (!hasAccess) {
-            // Redirect to home page based on role
-            if (authState.userRole === 'Admin') {
-                next('/');
-            } else {
-                next('/hse');
-            }
+            next(getDefaultRoute());
         } else {
             next();
         }
     } else if (to.meta.requiredRole) {
         // Check if user has the required role
         if (authState.userRole !== to.meta.requiredRole) {
-            // Redirect to home page based on role
-            if (authState.userRole === 'Admin') {
-                next('/');
-            } else {
-                next('/hse');
-            }
+            next(getDefaultRoute());
         } else {
             next();
         }

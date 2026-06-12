@@ -40,50 +40,50 @@ class Command(BaseCommand):
                 'is_superuser': True,
                 'group': 'Admin',
                 'job_role': 'System Administrator',
-                'roster_status': 'ONBOARD'
+                'roster_status': 'AVAILABLE'
             },
             {
                 'username': 'hr_staff',
                 'password': 'hr123',
                 'email': 'hr@saipem.com',
-                'first_name': 'HR',
-                'last_name': 'Staff',
+                'first_name': 'Ijlal',
+                'last_name': 'Nuhlan',
                 'is_superuser': False,
                 'group': 'HR Staff',
-                'job_role': 'HR Manager',
-                'roster_status': 'ONBOARD'
+                'job_role': 'HR Staff',
+                'roster_status': 'AVAILABLE'
             },
             {
                 'username': 'chief_engineer',
                 'password': 'chief123',
                 'email': 'chief@saipem.com',
-                'first_name': 'Chief',
-                'last_name': 'Engineer',
+                'first_name': 'Johan',
+                'last_name': 'Branson',
                 'is_superuser': False,
                 'group': 'Chief Engineer',
-                'job_role': 'Engineering Chief',
+                'job_role': 'Chief Engineer',
                 'roster_status': 'ONBOARD'
             },
             {
                 'username': 'worker',
                 'password': 'worker123',
                 'email': 'worker@saipem.com',
-                'first_name': 'Field',
-                'last_name': 'Worker',
+                'first_name': 'Aron',
+                'last_name': 'Piper',
                 'is_superuser': False,
                 'group': 'Worker',
-                'job_role': 'Mechanical Technician',
+                'job_role': 'Worker',
                 'roster_status': 'ONBOARD'
             },
             {
                 'username': 'safety_officer',
                 'password': 'safety123',
                 'email': 'safety@saipem.com',
-                'first_name': 'Safety',
-                'last_name': 'Officer',
+                'first_name': 'Diego',
+                'last_name': 'Savio',
                 'is_superuser': False,
                 'group': 'Safety Officer',
-                'job_role': 'HSE Officer',
+                'job_role': 'Safety Officer',
                 'roster_status': 'ONBOARD'
             },
         ]
@@ -92,7 +92,11 @@ class Command(BaseCommand):
             username = user_data['username']
             try:
                 user = User.objects.get(username=username)
-                self.stdout.write(self.style.WARNING(f'User {username} already exists'))
+                user.first_name = user_data['first_name']
+                user.last_name = user_data['last_name']
+                user.email = user_data['email']
+                user.save()
+                self.stdout.write(self.style.SUCCESS(f'✓ Updated existing user {username}'))
             except User.DoesNotExist:
                 user = User.objects.create_user(
                     username=user_data['username'],
@@ -138,39 +142,8 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.SUCCESS(f'✓ Using existing vessel: {default_vessel.vessel_name}'))
 
-        # STEP 4: Create Work Orders (linked to Vessel)
-        self.stdout.write('\n[4/5] Creating Work Orders...')
-        work_orders_data = [
-            {'wo_id': 'WO-2024-001', 'description': 'Engine Room Maintenance - Routine inspection and lubrication', 'scheduled_date': date.today() + timedelta(days=1), 'status': 'PENDING'},
-            {'wo_id': 'WO-2024-002', 'description': 'Deck Painting - Starboard side weather deck coating', 'scheduled_date': date.today() + timedelta(days=2), 'status': 'PENDING'},
-            {'wo_id': 'WO-2024-003', 'description': 'Confined Space Entry - Ballast tank inspection', 'scheduled_date': date.today() + timedelta(days=3), 'status': 'PENDING'},
-            {'wo_id': 'WO-2024-004', 'description': 'Hot Work - Welding repair on main deck structure', 'scheduled_date': date.today() + timedelta(days=1), 'status': 'IN_PROGRESS'},
-            {'wo_id': 'WO-2024-005', 'description': 'Working at Height - Mast antenna installation', 'scheduled_date': date.today(), 'status': 'IN_PROGRESS'},
-            {'wo_id': 'WO-2024-006', 'description': 'Electrical Isolation - Generator switchboard maintenance', 'scheduled_date': date.today() + timedelta(days=5), 'status': 'PENDING'},
-            {'wo_id': 'WO-2024-007', 'description': 'Scaffolding Erection - Access to upper deck equipment', 'scheduled_date': date.today() + timedelta(days=4), 'status': 'PENDING'},
-            {'wo_id': 'WO-2024-008', 'description': 'Main Crane Inspection - Load testing and certification', 'scheduled_date': date.today() + timedelta(days=6), 'status': 'PENDING'},
-            {'wo_id': 'WO-2024-009', 'description': 'Diesel Generator Overhaul - Oil change and filter replacement', 'scheduled_date': date.today() + timedelta(days=7), 'status': 'PENDING'},
-            {'wo_id': 'WO-2024-010', 'description': 'Helideck Safety Net Replacement - Inspection and maintenance', 'scheduled_date': date.today() + timedelta(days=3), 'status': 'PENDING'},
-        ]
-
-        for wo_data in work_orders_data:
-            work_order, created = WorkOrder.objects.get_or_create(
-                wo_id=wo_data['wo_id'],
-                defaults={
-                    'vessel': default_vessel,
-                    'description': wo_data['description'],
-                    'scheduled_date': wo_data['scheduled_date'],
-                    'status': wo_data['status'],
-                    'created_by': 'System'
-                }
-            )
-            if created:
-                self.stdout.write(f"✓ Created work order: {work_order.wo_id}")
-            else:
-                self.stdout.write(f"- Work order already exists: {work_order.wo_id}")
-
-        # STEP 5: Create Work Locations (Deck Locations - linked to Vessel)
-        self.stdout.write('\n[5/5] Creating Deck Locations...')
+        # STEP 4: Create Work Locations (Deck Locations - linked to Vessel)
+        self.stdout.write('\n[4/4] Creating Deck Locations...')
         locations_data = [
             {'deck_name': 'Main Deck', 'risk_level': 'MEDIUM'},
             {'deck_name': 'Engine Room', 'risk_level': 'HIGH'},

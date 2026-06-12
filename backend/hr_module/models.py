@@ -7,7 +7,7 @@ class Employee(models.Model):
     """Employee data - linked to Django User"""
     ROSTER_STATUS_CHOICES = [
         ('ONBOARD', 'On Board'),
-        ('OFFBOARD', 'Off Board'),
+        ('AVAILABLE', 'Available'),
     ]
 
     emp_id = models.CharField(max_length=50, unique=True, primary_key=True)

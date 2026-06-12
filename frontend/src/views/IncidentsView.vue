@@ -121,7 +121,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
-import { authState } from '@/store/auth';
+import { authState, getAccessToken } from '@/store/auth';
 import { toast } from 'vue-sonner';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import IncidentReportForm from '@/components/IncidentReportForm.vue';
@@ -176,7 +176,8 @@ const handleBulkAction = async (actionKey, rows) => {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRFToken': getCsrfToken() || ''
+              'X-CSRFToken': getCsrfToken() || '',
+              'Authorization': `Bearer ${getAccessToken()}`
             },
             body: JSON.stringify({ status: 'INVESTIGATING' }),
             credentials: 'include'
@@ -202,7 +203,8 @@ const handleBulkAction = async (actionKey, rows) => {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRFToken': getCsrfToken() || ''
+              'X-CSRFToken': getCsrfToken() || '',
+              'Authorization': `Bearer ${getAccessToken()}`
             },
             body: JSON.stringify({ status: 'CLOSED' }),
             credentials: 'include'
@@ -231,6 +233,9 @@ const fetchIncidents = async () => {
     }
     const queryString = params.toString() ? `?${params.toString()}` : '';
     const response = await fetch(`${API_BASE_URL}/hse/incidents/${queryString}`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
       credentials: 'include',
       signal: abortController.signal
     });
@@ -251,7 +256,12 @@ const fetchIncidents = async () => {
 
 const fetchSystemStatus = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/hse/status/current/`, { credentials: 'include' });
+    const response = await fetch(`${API_BASE_URL}/hse/status/current/`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
+      credentials: 'include'
+    });
     if (response.ok) {
       const data = await response.json();
       globalStatus.value = data.global_status;
@@ -287,7 +297,8 @@ const investigateIncident = async (incident) => {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': getCsrfToken() || ''
+        'X-CSRFToken': getCsrfToken() || '',
+        'Authorization': `Bearer ${getAccessToken()}`
       },
       body: JSON.stringify({ status: 'INVESTIGATING' }),
       credentials: 'include'
@@ -311,7 +322,8 @@ const closeIncident = async (incident) => {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': getCsrfToken() || ''
+        'X-CSRFToken': getCsrfToken() || '',
+        'Authorization': `Bearer ${getAccessToken()}`
       },
       body: JSON.stringify({ status: 'CLOSED' }),
       credentials: 'include'
@@ -344,7 +356,8 @@ const confirmDeleteIncident = async () => {
     const response = await fetch(`${API_BASE_URL}/hse/incidents/${selectedIncident.value.id}/`, {
       method: 'DELETE',
       headers: {
-        'X-CSRFToken': getCsrfToken() || ''
+        'X-CSRFToken': getCsrfToken() || '',
+        'Authorization': `Bearer ${getAccessToken()}`
       },
       credentials: 'include'
     });

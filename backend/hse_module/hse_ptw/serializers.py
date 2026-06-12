@@ -59,7 +59,12 @@ class PermitToWorkSerializer(serializers.ModelSerializer):
                 'description': work_order.description,
                 'scheduled_date': work_order.scheduled_date,
                 'status': work_order.status,
-                'created_at': work_order.created_at
+                'created_at': work_order.created_at,
+                'target_asset': work_order.asset.name if work_order.asset else (work_order.machinery.equipment_name if work_order.machinery else '-'),
+                'asset_assigned_decks': [
+                    {'id': deck.id, 'deck_name': deck.deck_name, 'risk_level': deck.risk_level}
+                    for deck in work_order.asset.assigned_decks.all()
+                ] if work_order.asset else []
             }
         except WorkOrder.DoesNotExist:
             return None
@@ -95,45 +100,56 @@ class PermitToWorkSerializer(serializers.ModelSerializer):
             return rejected_by
 
     def validate(self, data):
-        if not self.instance:
-            emp_id = data.get('emp_id')
-            permit_type = data.get('permit_type')
+        instance = self.instance
+        emp_id = data.get('emp_id') or (instance.emp_id if instance else None)
+        permit_type = data.get('permit_type') or (instance.permit_type if instance else None)
+        vessel = data.get('vessel') or (instance.vessel if instance else None)
+        wo_id = data.get('wo_id') or (instance.wo_id if instance else None)
+        deck_location = data.get('deck_location') or (instance.deck_location if instance else None)
 
-            if emp_id:
-                try:
-                    employee = Employee.objects.get(emp_id=emp_id)
-                    from datetime import date
-                    today = date.today()
+        if emp_id:
+            try:
+                employee = Employee.objects.get(emp_id=emp_id)
+                from datetime import date
+                today = date.today()
 
-                    # Phase 4 Interlock: Roster Validation
-                    from hr_module.models import Roster
-                    vessel = data.get('vessel')
-                    if vessel:
-                        is_onboard = Roster.objects.filter(
-                            employee=employee,
-                            vessel=vessel,
-                            start_date__lte=today,
-                            end_date__gte=today
-                        ).exists()
-                        if not is_onboard:
-                            raise serializers.ValidationError({"emp_id": f"Employee is not rostered on vessel {vessel.vessel_name} today."})
+                # Phase 4 Interlock: Roster Validation
+                from hr_module.models import Roster
+                if vessel:
+                    is_onboard = Roster.objects.filter(
+                        employee=employee,
+                        vessel=vessel,
+                        start_date__lte=today,
+                        end_date__gte=today
+                    ).exists()
+                    if not is_onboard:
+                        raise serializers.ValidationError({"emp_id": f"Employee is not rostered on vessel {vessel.vessel_name} today."})
 
-                    # Phase 4 Interlock: Asset Validation
-                    wo_id = data.get('wo_id')
-                    if wo_id and vessel and wo_id.vessel != vessel:
-                        raise serializers.ValidationError({"wo_id": "Work Order does not belong to the selected vessel."})
+                # Phase 4 Interlock: Asset Validation
+                if wo_id and vessel and wo_id.vessel != vessel:
+                    raise serializers.ValidationError({"wo_id": "Work Order does not belong to the selected vessel."})
 
-                    # Phase 4 Interlock: Location Validation
-                    deck_location = data.get('deck_location')
-                    if deck_location and vessel:
-                        if not vessel.assigned_decks.filter(id=deck_location.id).exists():
-                            raise serializers.ValidationError({"deck_location": "Location is not assigned to the selected vessel."})
+                # Phase 4 Interlock: Location Validation
+                if deck_location and vessel:
+                    if not vessel.assigned_decks.filter(id=deck_location.id).exists():
+                        raise serializers.ValidationError({"deck_location": "Location is not assigned to the selected vessel."})
 
-                    # Gatekeeper: Medical Status
+                # Phase 4 Interlock: Asset Deck Location Validation
+                if wo_id and wo_id.asset and deck_location:
+                    asset = wo_id.asset
+                    if not asset.assigned_decks.filter(id=deck_location.id).exists():
+                        valid_decks = ", ".join(d.deck_name for d in asset.assigned_decks.all())
+                        raise serializers.ValidationError({
+                            "deck_location": f"Selected location is not valid for asset '{asset.name}' (must be one of: {valid_decks})."
+                        })
+
+                # Gatekeeper: Medical Status
+                if not instance or data.get('emp_id'):
                     if employee.mcu_status != 'FIT':
                         raise serializers.ValidationError({"emp_id": "Employee must be medically FIT to create a PTW."})
 
-                    # Gatekeeper: Certifications
+                # Gatekeeper: Certifications
+                if not instance or data.get('permit_type') or data.get('emp_id'):
                     from hr_module.models import Certification
                     
                     has_valid_cert = Certification.objects.filter(
@@ -144,8 +160,8 @@ class PermitToWorkSerializer(serializers.ModelSerializer):
                     
                     if not has_valid_cert:
                         raise serializers.ValidationError({"permit_type": f"Employee does not have a valid {permit_type} certification."})
-                except Employee.DoesNotExist:
-                    raise serializers.ValidationError({"emp_id": "Employee not found."})
+            except Employee.DoesNotExist:
+                raise serializers.ValidationError({"emp_id": "Employee not found."})
         return data
 
     class Meta:
