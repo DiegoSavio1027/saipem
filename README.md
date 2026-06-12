@@ -1,4 +1,4 @@
-# Saipem UOS (Unified Operating System)
+# Saipem UOS (Unified Offshore System)
 
 ![Vue.js](https://img.shields.io/badge/Vue.js-3.0-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-5.0-092E20?style=for-the-badge&logo=django&logoColor=white)
@@ -11,6 +11,7 @@
 ## 📌 Deskripsi Singkat Proyek
 
 **Saipem UOS** adalah sistem manajemen terintegrasi tingkat lanjut yang dirancang khusus untuk mengelola operasional *Human Resources* (HR), *Asset/Vessel*, dan *Health, Safety, and Environment* (HSE) secara tersentralisasi. Sistem ini digunakan oleh admin, staf HSE, dan manajemen eksekutif untuk memantau status pekerja (termasuk kelayakan medis/MCU), melacak aktivitas kapal, memanajemen asstet, dan menerbitkan Surat Izin Kerja Aman (Permit to Work). Dengan Saipem UOS, koordinasi operasional lepas pantai (offshore) menjadi lebih transparan, aman, dan efisien dari ujung ke ujung.
+
 
 ---
 
@@ -27,7 +28,8 @@
   - Work Order (Surat Perintah Kerja) untuk setiap aset.
 - **HSE Module (K3 & Personnel On Board):**
   - Pembuatan dan persetujuan elektronik untuk *Permit to Work* (PTW).
-  - Sistem pencatatan POB (Personnel On Board) dan laporan Insiden (Incident Management).
+  - Sistem pencatatan POB (Personnel On Board) *real-time* berbasis WebSocket dan Redis.
+  - Manajemen Laporan Insiden (Incident Management).
 - **Dashboard Interaktif & Analitik:** Visualisasi data komprehensif bagi pimpinan untuk memantau keselamatan dan operasional harian.
 
 ---
@@ -250,6 +252,7 @@ Pastikan sistem operasi Anda (Windows/macOS/Linux) telah terpasang perangkat lun
 - **Python** (>= 3.10)
 - **Node.js** (>= 18.x) & **NPM** (>= 9.x)
 - **PostgreSQL** atau **SQLite** (Default untuk *development*)
+- **Redis Server** (Wajib untuk fitur *real-time WebSocket* & POB)
 - **Git**
 
 ---
@@ -299,8 +302,11 @@ npm install
 
 ## 🚀 Cara Penggunaan & Menjalankan Server
 
-**1. Menjalankan Server Backend (Django):**
+**1. Menjalankan Server Backend & Redis:**
 ```bash
+# Pastikan server Redis sudah berjalan di komputer Anda
+# (Contoh di Linux/macOS: brew services start redis atau sudo systemctl start redis)
+
 # Pastikan berada di folder backend dan venv sudah aktif
 python manage.py runserver 0.0.0.0:8989
 ```
