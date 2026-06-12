@@ -190,8 +190,9 @@ def delete_activity(request, pk):
 
 @api_view(['GET'])
 def payroll_calculation(request):
-    month = int(request.query_params.get('month', 1))
-    year = int(request.query_params.get('year', 2026))
+    today = datetime.date.today()
+    month = int(request.query_params.get('month', today.month))
+    year = int(request.query_params.get('year', today.year))
 
     start_of_month = datetime.date(year, month, 1)
     if month == 12:
