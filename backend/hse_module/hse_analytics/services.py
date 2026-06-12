@@ -281,13 +281,13 @@ def calculate_location_statistics(target_date=None):
 
         # Count PTWs for this location
         ptw_issued = PermitToWork.objects.filter(
-            deck_location=location.name,
+            deck_location=location.deck_name,
             created_at__date=target_date
         ).count()
 
         # Create or update location statistics
         stats, created = LocationStatistics.objects.update_or_create(
-            location_name=location.name,
+            location_name=location.deck_name,
             date=target_date,
             defaults={
                 'total_check_ins': check_ins,
@@ -303,7 +303,7 @@ def calculate_location_statistics(target_date=None):
         stats.calculate_risk_score()
         stats.save()
 
-        logger.info(f"{'Created' if created else 'Updated'} statistics for {location.name}")
+        logger.info(f"{'Created' if created else 'Updated'} statistics for {location.deck_name}")
 
 
 def aggregate_all_analytics():
