@@ -142,6 +142,22 @@ class WorkOrder(models.Model):
 
 
 # ==========================================
+# WORK ORDER MATERIAL MODEL
+# ==========================================
+class WorkOrderMaterial(models.Model):
+    """Tracks spare parts used in a work order"""
+    id = models.AutoField(primary_key=True)
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='materials')
+    spare_part = models.ForeignKey(SparePart, on_delete=models.CASCADE)
+    quantity_used = models.IntegerField(default=1)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.quantity_used}x {self.spare_part.part_name} for {self.work_order.wo_id}"
+
+
+
+# ==========================================
 # MAINTENANCE TASK MODEL
 # ==========================================
 class MaintenanceTask(models.Model):

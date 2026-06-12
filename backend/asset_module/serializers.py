@@ -164,6 +164,17 @@ class SparePartSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+from .models import WorkOrderMaterial
+
+class WorkOrderMaterialSerializer(serializers.ModelSerializer):
+    part_name = serializers.CharField(source='spare_part.part_name', read_only=True)
+    part_number = serializers.CharField(source='spare_part.part_number', read_only=True)
+
+    class Meta:
+        model = WorkOrderMaterial
+        fields = ['id', 'spare_part', 'part_name', 'part_number', 'quantity_used', 'added_at']
+
+
 # ==========================================
 # WORK ORDER SERIALIZER
 # ==========================================
@@ -172,6 +183,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     asset_name = serializers.CharField(source='asset.name', read_only=True, allow_null=True)
     machinery_name = serializers.CharField(source='machinery.equipment_name', read_only=True, allow_null=True)
     asset_assigned_decks = serializers.SerializerMethodField()
+    materials = WorkOrderMaterialSerializer(many=True, read_only=True)
 
     class Meta:
         model = WorkOrder
