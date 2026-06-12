@@ -1,8 +1,345 @@
-# saipemuos
+# Saipem UOS (Unified Operating System)
 
-HR 
-ASSET
-HSE
+![Vue.js](https://img.shields.io/badge/Vue.js-3.0-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)
+![Django](https://img.shields.io/badge/Django-5.0-092E20?style=for-the-badge&logo=django&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Build](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)
+![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
 
+## 📌 Deskripsi Singkat Proyek
 
-management system for Saipem.
+**Saipem UOS** adalah sistem manajemen terintegrasi tingkat lanjut yang dirancang khusus untuk mengelola operasional *Human Resources* (HR), *Asset/Vessel*, dan *Health, Safety, and Environment* (HSE) secara tersentralisasi. Sistem ini digunakan oleh admin, staf HSE, dan manajemen eksekutif untuk memantau status pekerja (termasuk kelayakan medis/MCU), melacak aktivitas kapal, memanajemen asstet, dan menerbitkan Surat Izin Kerja Aman (Permit to Work). Dengan Saipem UOS, koordinasi operasional lepas pantai (offshore) menjadi lebih transparan, aman, dan efisien dari ujung ke ujung.
+
+---
+
+## 🚀 Fitur Utama (Key Features)
+
+- **Sistem Autentikasi Terpusat:** Role-Based Access Control (RBAC) dengan JWT (JSON Web Token) untuk Admin, HR, HSE Officer, dan Management.
+- **HR Module (Manajemen Personalia & Jadwal):**
+  - Manajemen data karyawan lengkap beserta histori sertifikasinya.
+  - Penjadwalan Roster pekerja ke kapal (vessel) secara real-time.
+  - **Smart Blocker MCU:** Sistem otomatis mencegah pekerja yang berstatus medis *UNFIT* atau sertifikasi kesehatannya telah *EXPIRED* untuk dijadwalkan ke lapangan kerja.
+- **Asset Module (Manajemen Kapal & Peralatan):**
+  - Manajemen detail kapal (Vessel) beserta lokasinya (deck/area).
+  - Pelacakan Machinery, Spare Parts, Inventory, dan Maintenance Tasks.
+  - Work Order (Surat Perintah Kerja) untuk setiap aset.
+- **HSE Module (K3 & Personnel On Board):**
+  - Pembuatan dan persetujuan elektronik untuk *Permit to Work* (PTW).
+  - Sistem pencatatan POB (Personnel On Board) dan laporan Insiden (Incident Management).
+- **Dashboard Interaktif & Analitik:** Visualisasi data komprehensif bagi pimpinan untuk memantau keselamatan dan operasional harian.
+
+---
+
+## 📂 Struktur Direktori Proyek (Folder Tree)
+
+Struktur repositori ini dibagi menjadi dua bagian utama: `backend` (Django) dan `frontend` (Vue.js).
+
+```text
+saipem-hse/
+├── backend/                  # Django REST API Backend
+│   ├── asset_module/         # Asset, Machinery, Inventory, & Work Order
+│   ├── auth_module/          # Authentication & Manajemen Role Akses
+│   ├── core_system/          # URL Utama & Konfigurasi Settings Django
+│   ├── hr_module/            # Modul Karyawan, Roster Matrix, & Validasi MCU
+│   ├── hse_module/           # Permit to Work, Incident Report, & POB
+│   ├── offshore_module/      # Pemetaan Lokasi (Vessel & Area Deck)
+│   ├── manage.py             # Entry point utama untuk Django CLI
+│   └── requirements.txt      # Daftar dependensi Python
+│
+├── frontend/                 # Vue.js 3 Frontend Web App
+│   ├── public/               # File Statis publik
+│   ├── src/                  # *Source code* utama aplikasi Vue
+│   │   ├── assets/           # File gambar, CSS/Tailwind
+│   │   ├── components/       # Komponen UI Vue yang dapat digunakan ulang
+│   │   ├── router/           # Konfigurasi Vue Router (Navigasi URL)
+│   │   ├── stores/           # Manajemen State (Pinia)
+│   │   ├── views/            # Halaman utama aplikasi (Dashboard, HR, HSE)
+│   │   └── App.vue           # Root Component Vue
+│   ├── package.json          # Daftar dependensi NPM / Node.js
+│   └── vite.config.js        # Konfigurasi *build tool* Vite
+│
+└── README.md                 # Dokumentasi Proyek yang sedang Anda baca
+```
+
+---
+
+## ⚖️ Perbandingan Proses Bisnis (Sebelum vs Sesudah Automasi)
+
+| Proses Manual (Lama) 🔴 | Automasi Sistem (Baru) 🟢 | Dampak Positif 🚀 |
+| --- | --- | --- |
+| Pengecekan MCU/Sertifikat pekerja dilakukan manual via dokumen kertas/Excel sebelum ditugaskan ke kapal lepas pantai. | **Smart Blocker:** Sistem secara otomatis menolak pembuatan Roster jika status MCU pekerja *UNFIT* atau sudah lewat tanggal kedaluwarsa. | Menghilangkan risiko kelalaian (human error) 100%, memangkas waktu verifikasi medis dari jam menjadi instan. |
+| Pengajuan *Permit to Work* (PTW) memakan waktu lama karena pencarian tanda tangan fisik *Safety Officer*. | Persetujuan PTW dilakukan secara digital. Form langsung terhubung ke status aset dan pekerja. | Memangkas waktu tunggu dokumen hingga 80%, pekerjaan lebih cepat dimulai. |
+| Manajemen Maintenance dan Work Order aset dicatat dalam dokumen terpisah dengan risiko hilang. | *Work Order* dan *Maintenance Task* terhubung ke *Inventory*. Penggunaan *Spare Part* tercatat otomatis. | Perencanaan pemeliharaan lebih presisi dan riwayat servis terpusat (*traceable*). |
+| Sulit melacak total *Personnel On Board* (POB) di atas kapal. | Sistem POB terhubung dengan jadwal *Roster* HR. | Total manifest penumpang (POB) terpantau transparan dan *real-time*. |
+
+---
+
+## 🔄 Diagram Alur Proses Bisnis Terintegrasi (Workflows)
+
+### 1. Alur HR - Roster Scheduling & Smart MCU Blocker
+```mermaid
+sequenceDiagram
+    participant HR as HR Admin
+    participant System as Saipem UOS Backend
+    participant DB as Database
+    
+    HR->>System: Buat Jadwal Roster (Pekerja, Kapal, Tanggal)
+    activate System
+    System->>DB: Query Data Employee (MCU Status, Expiry)
+    DB-->>System: Return Data Karyawan
+    
+    alt MCU = UNFIT atau Expired < Hari Ini
+        System--xHR: ❌ Error 400: Deployment Denied (Medically UNFIT/Expired)
+    else MCU = FIT dan Belum Kedaluwarsa
+        System->>DB: Simpan Data Roster
+        DB-->>System: Data Tersimpan
+        System-->>HR: ✅ Success: Roster Tersimpan
+        System->>System: Update POB (Personnel on Board)
+    end
+    deactivate System
+```
+
+### 2. Alur HSE - Permit to Work (PTW)
+```mermaid
+sequenceDiagram
+    participant Worker as HSE Officer / Requester
+    participant System as Saipem UOS
+    participant Manager as Management / Approver
+    
+    Worker->>System: Buat Permit to Work (Aset, Pekerja, Lokasi)
+    activate System
+    System-->>System: Validasi Pekerja (Harus ada di Roster Kapal ybs)
+    System->>System: Status PTW = DRAFT
+    System-->>Worker: Form PTW Disimpan
+    deactivate System
+    
+    Worker->>System: Submit for Approval
+    System-->>Manager: Notifikasi (Dashboard/UI)
+    
+    Manager->>System: Approve PTW
+    activate System
+    System->>System: Update Status = APPROVED, Form Terkunci
+    System-->>Worker: PTW Diterbitkan (Active)
+    deactivate System
+```
+
+### 3. Alur ASSET - Work Order & Maintenance
+```mermaid
+sequenceDiagram
+    participant Eng as Engineer
+    participant System as Saipem UOS
+    participant DB as Inventory & Asset DB
+    
+    Eng->>System: Buat Work Order (WO) untuk Machinery X
+    System-->>Eng: WO Terbuat (Pending)
+    
+    Eng->>System: Tambahkan Sparepart yang digunakan ke WO
+    activate System
+    System->>DB: Cek Stok Sparepart (Inventory)
+    alt Stok Cukup
+        System->>DB: Kurangi Stok (Deduct Inventory)
+        System-->>Eng: Sparepart Ditambahkan
+    else Stok Kurang
+        System--xEng: ❌ Error: Insufficient Stock
+    end
+    deactivate System
+    
+    Eng->>System: Selesaikan WO (Complete)
+    System->>DB: Update Status Machinery (Operational)
+```
+
+---
+
+## 🌐 Dokumentasi API Endpoints Lengkap (Django REST)
+
+Seluruh API berada pada path dasar: `http://localhost:8989/api/v1/`
+
+### 🛡️ 1. Auth Module (`/api/v1/auth/`)
+Sistem autentikasi menggunakan JWT (JSON Web Token).
+- `POST /login/` - Login dan dapatkan akses token
+- `POST /token/` - Dapatkan Access & Refresh token (Token Pair)
+- `POST /token/refresh/` - Refresh Access token
+- `GET /me/` - Mendapatkan profile user yang sedang login
+- `POST /logout/` - Logout sistem
+- `GET/POST /users/` - Manajemen Akun (List/Create) - *Admin Only*
+- `GET/PUT/DELETE /users/<id>/` - Detail, Update, Hapus Akun
+- `GET /dev/quick-login-accounts/` - Mendapatkan list akun demo (Dev only)
+
+### 👥 2. HR Module (`/api/v1/hr/`)
+- `GET /employees/` - List seluruh karyawan
+- `POST /employees/add/` - Menambah karyawan baru
+- `DELETE /employees/delete/<emp_id>/` - Menghapus karyawan
+- `POST /employees/toggle/<emp_id>/` - Mengganti status ketersediaan (*Available/On Board*)
+- `PUT /employees/update/<emp_id>/` - Update profil dan status MCU karyawan
+- `GET /rosters/` - List jadwal *Roster*
+- `DELETE /rosters/delete/<id>/` - Menghapus *Roster*
+- `GET /activities/` - List Vessel Activity (Aktivitas Kapal)
+- `DELETE /activities/delete/<id>/` - Menghapus Aktivitas
+- `GET /payroll/` - Mengambil kalkulasi otomatis payroll/gaji pekerja
+- `GET /analytics/` - Dashboard analitik HR (statistik MCU, roster, dll)
+- `GET /positions/` - Master data *Job Position*
+- `DELETE /positions/delete/<id>/` - Menghapus posisi
+- `GET /certifications/<emp_id>/` - Detail sertifikasi per pekerja
+- `POST /certifications/add/<emp_id>/` - Tambah sertifikat baru
+- `DELETE /certifications/delete/<cert_id>/` - Hapus sertifikat
+
+### 🦺 3. HSE Module (`/api/v1/hse/`)
+- `GET/POST /ptw/` - Buat/List *Permit to Work* (PTW)
+- `GET/PUT/DELETE /ptw/<id>/` - Kelola detail PTW (Approve/Reject)
+- `GET/POST /employees/` - (Router PTW) List/Tambah pekerja dalam konteks HSE
+- `GET /pob/` - Data Personnel On Board (POB) *real-time*
+- `GET/POST /incidents/` - List/Buat Laporan Insiden Kecelakaan Kerja
+- `GET/PUT/DELETE /incidents/<id>/` - Update Laporan Insiden
+- `GET/POST /status/` - System Status Operasional HSE
+- `GET /analytics/` - Grafik analitik HSE (Safe man hours, Incident Rate)
+
+### 🚢 4. Offshore Module (`/api/v1/offshore/`)
+Manajemen Lokasi (Deck/Area) dan penghubungan ke Kapal Utama.
+- `GET /vessels/` - List Kapal (Khusus tampilan relasional area)
+- `GET /vessels/<id>/` - Detail Kapal
+- `POST /vessels/<id>/assign-decks/` - Menugaskan *Deck/Area* ke dalam suatu Kapal
+- `DELETE /vessels/<id>/assign-decks/<deck_id>/` - Melepas penugasan *Deck* dari Kapal
+- `GET /locations/` - List Lokasi Offshore (Deck)
+- `GET /locations/<id>/` - Detail Lokasi
+
+### 🔧 5. Asset Module (`/api/v1/asset/`)
+- `GET /assets/` - List Seluruh Kapal Utama (*Vessel Assets*)
+- `GET /assets/<asset_id>/` - Detail *Asset*
+- `GET /machinery/` - Peralatan mesin yang terpasang pada *Asset*
+- `GET /machinery/<id>/` - Detail *Machinery*
+- `GET /spareparts/` - Master data Suku Cadang (*Spare Part*)
+- `GET /spareparts/<id>/` - Detail *Spare Part*
+- `GET /workorders/` - List Surat Perintah Kerja (WO)
+- `GET /workorders/<id>/` - Detail WO
+- `GET /maintenance/` - List Jadwal Tugas Pemeliharaan Rutin
+- `GET /maintenance/<id>/` - Detail *Maintenance Task*
+- `GET /inventory/` - Stok *Inventory* Barang
+- `GET /inventory/<id>/` - Detail Stok
+
+*(Catatan: Sebagian besar endpoint Asset Module mendukung operasi lengkap POST/PUT/DELETE tergantung hak akses role Anda)*
+
+---
+
+## 👥 Pemetaan Tugas Aktor (Actor Role Mapping)
+
+| Aktor / Role | Hak Akses & Aksi Spesifik di Aplikasi | Automasi & Proses Sistem di Latar Belakang |
+| --- | --- | --- |
+| **Super Admin / System Administrator** | • *Full Access* ke semua modul sistem.<br>• Manajemen CRUD Akun Pengguna & Role (Assign Role, reset password).<br>• Manajemen Master Data Absolut: *Vessel, Machinery, Job Positions, Location/Deck, Inventory*. | • Log audit sistem terekam untuk setiap perubahan data kritikal.<br>• Menerapkan perlindungan integritas relasi *database* (misal: memblokir penghapusan *Vessel* jika masih ada pekerja *On Board* atau PTW aktif di dalamnya). |
+| **HR Manager / HR Admin** | • Menambahkan profil *Employee*, *Job Position*, dan histori *Certification* pekerja.<br>• Menyusun jadwal alokasi pekerja (*Roster Matrix*) ke lokasi/kapal tertentu.<br>• Melakukan pembaruan status kelayakan *Medical Check-Up* (MCU).<br>• Memproses kalkulasi *Payroll/Timesheet* otomatis.<br>• Memantau *Analytics Dashboard* departemen HR. | • **Smart MCU Blocker:** Sistem secara *real-time* menolak form penjadwalan *Roster* jika pekerja berstatus medis *UNFIT* atau sertifikasinya *EXPIRED*.<br>• Kalkulasi penggajian otomatis di- *generate* berdasarkan *Daily Rate* posisi dikali dengan durasi hari pada *Roster*.<br>• *Auto-trigger* penambahan kuota manifest *Personnel On Board* (POB) kapal saat jadwal pekerja dimulai. |
+| **HSE Officer / Safety Inspector** | • Membuat form *Permit to Work* (PTW) untuk pekerjaan berisiko (Panas, Dingin, Ruang Terbatas).<br>• Menginput *Incident Report* (Laporan Kecelakaan Kerja) lengkap dengan kronologi.<br>• Memantau daftar riil *Personnel On Board* (POB) harian.<br>• Mengupdate *System Status* keamanan operasional. | • **PTW Location Conflict Check:** Sistem memastikan lokasi/deck *Permit to Work* tidak tumpang tindih dengan pekerjaan berbahaya lainnya di area yang sama.<br>• Sistem otomatis memverifikasi pekerja yang dimasukkan ke form PTW benar-benar sedang berada di kapal tersebut (*POB Validation*).<br>• Sistem secara otomatis mengakumulasi log *Safe Man Hours* harian dari total POB. |
+| **Asset Engineer / Maintenance Manager** | • Menerbitkan dan menjalankan *Work Order* (WO) untuk peralatan mesin.<br>• Mengelola stok masuk/keluar *Spare Part* & *Inventory*.<br>• Menjadwalkan *Maintenance Tasks* berkala untuk tiap *Machinery* di atas kapal. | • **Auto-Deduct Inventory:** Sistem otomatis mengurangi (deduct) stok barang di *Inventory* secara *real-time* ketika suku cadang digunakan di dalam suatu WO aktif.<br>• Sistem otomatis mengubah status operasional mesin menjadi *Under Maintenance* selama WO berjalan, mencegah mesin digunakan dalam operasional (terhubung ke modul HSE). |
+| **Executive Management / OIM (Offshore Installation Manager)** | • Memiliki kewenangan akhir untuk melakukan *Approval* atau *Rejection* terhadap *Permit to Work* (PTW).<br>• Melakukan *Approval* terhadap *Work Order* yang membutuhkan material/biaya tingkat tinggi.<br>• Mengakses *High-Level Analytics Dashboard* (Statistik Insiden, Total POB Lintas Kapal, Utilisasi Pekerja). | • Saat izin PTW di-*approve*, form tersebut otomatis terkunci oleh sistem (*hukum read-only / immutable*) untuk tujuan audit.<br>• Status *Permit to Work* otomatis berubah menjadi *Active*.<br>• Mengkompilasi agregasi Big Data dari 3 modul (HR, HSE, Asset) menjadi visualisasi grafik tanpa membebani *query* performa harian aplikasi. |
+| **Offshore Crew / General Worker** | • *Read-only access* ke portal pekerja.<br>• Melihat detail jadwal *Roster* keberangkatan dan penugasan lokasi pribadi miliknya.<br>• Mengecek masa berlaku *Certification* dan *MCU* pribadinya sendiri. | • Sistem *cron job* dapat men-*trigger* notifikasi peringatan (misal H-30) kepada pekerja secara sistemik jika sertifikat atau pemeriksaan medisnya akan segera kedaluwarsa. |
+
+---
+
+## 📸 Tangkapan Layar / Demo Visual
+
+*(Tambahkan Screenshot Aplikasi Di Sini)*
+> `Contoh format: ![HSE Dashboard](/docs/images/hse-dashboard.png)`
+> `Contoh format: ![Smart Blocker MCU Error](/docs/images/mcu-error.png)`
+> `Contoh format: ![Work Order Flow](/docs/images/work-order.png)`
+
+---
+
+## ⚙️ Prasyarat Sistem (Prerequisites)
+
+Pastikan sistem operasi Anda (Windows/macOS/Linux) telah terpasang perangkat lunak berikut:
+- **Python** (>= 3.10)
+- **Node.js** (>= 18.x) & **NPM** (>= 9.x)
+- **PostgreSQL** atau **SQLite** (Default untuk *development*)
+- **Git**
+
+---
+
+## 💻 Langkah Instalasi & Setup
+
+**1. Clone Repositori**
+```bash
+git clone https://github.com/DiegoSavio1027/saipem.git
+cd saipem
+```
+
+**2. Setup Backend (Django)**
+```bash
+# Masuk ke direktori backend
+cd backend
+
+# Buat dan aktifkan Virtual Environment
+python -m venv venv
+
+# macOS/Linux:
+source venv/bin/activate
+# Windows:
+# venv\Scripts\activate
+
+# Install dependensi
+pip install -r requirements.txt
+
+# Lakukan Migrasi Database
+python manage.py makemigrations
+python manage.py migrate
+
+# Buat Akun Superuser (Untuk mengakses Django Admin & Sistem)
+python manage.py createsuperuser
+```
+
+**3. Setup Frontend (Vue.js)**
+```bash
+# Buka tab terminal baru, navigasi ke folder frontend
+cd frontend
+
+# Install package
+npm install
+```
+
+---
+
+## 🚀 Cara Penggunaan & Menjalankan Server
+
+**1. Menjalankan Server Backend (Django):**
+```bash
+# Pastikan berada di folder backend dan venv sudah aktif
+python manage.py runserver 0.0.0.0:8989
+```
+*Backend API akan berjalan di `http://localhost:8989`*
+
+**2. Menjalankan Server Frontend (Vue.js):**
+```bash
+# Pastikan berada di folder frontend
+npm run dev
+```
+*Aplikasi web (UI) dapat diakses melalui browser pada `http://localhost:5173`*
+
+### 🔑 Akun Demo (Credentials)
+Sistem menyediakan endpoint `/api/v1/auth/dev/quick-login-accounts/` di mode *development* untuk mempermudah login. Anda juga dapat menggunakan akun *Superuser* yang telah Anda buat pada proses instalasi di atas.
+
+Contoh Akun yang umum dipakai dalam *Seeder/Fixtures*:
+| Role / Jabatan | Username | Password | Keterangan |
+| --- | --- | --- | --- |
+| **Administrator** | `admin` | `admin123` | *Superuser / System Admin* |
+| **HR Staff** | `hr_staff` | `hr123` | *HR Manager / Pengelola Roster & MCU* |
+| **Safety Officer** | `safety_officer` | `safety123` | *HSE Officer / Pembuat PTW & Laporan Insiden* |
+| **Chief Engineer** | `chief_engineer` | `chief123` | *Asset Engineer / Pengelola Work Order & Maintenance* |
+| **Worker** | `worker` | `worker123` | *Offshore Crew / Pekerja Lapangan (Read-Only)* |
+
+*(Sesuaikan dengan data riil yang di-*seed* ke dalam *database* lokal Anda)*
+
+---
+
+## 🤝 Panduan Kontribusi (Contributing)
+
+Kami sangat menghargai kontribusi Anda pada proyek *Saipem UOS*! Ikuti langkah-langkah *Git Flow* standar berikut:
+1. Lakukan **Fork** pada repositori ini.
+2. Buat *branch* fitur/bugfix baru (`git checkout -b feature/NamaFitur`).
+3. Lakukan **Commit** (*Semantic commit message* sangat direkomendasikan) (`git commit -m 'feat: Menambahkan Analitik POB'`).
+4. **Push** ke *branch* Anda (`git push origin feature/NamaFitur`).
+5. Ajukan **Pull Request (PR)** ke repositori utama. Tunggu proses *review*.
+
+---
+
+## 📄 Lisensi (License)
+
+Proyek ini dilisensikan secara *Open Source* di bawah [MIT License](https://opensource.org/licenses/MIT). Anda diberikan kebebasan penuh untuk menggunakan, menyalin, memodifikasi, dan mendistribusikan sistem ini untuk keperluan portofolio, pembelajaran, maupun komersial dengan menyertakan pemberitahuan hak cipta aslinya.

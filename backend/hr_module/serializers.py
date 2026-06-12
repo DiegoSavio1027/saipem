@@ -73,7 +73,7 @@ class VesselActivitySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = VesselActivity
-        fields = ['id', 'asset', 'asset_name', 'start', 'end', 'activity_name']
+        fields = ['id', 'vessel', 'vessel_name', 'start', 'end', 'activity_name']
 
 
 # ==========================================

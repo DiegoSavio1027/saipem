@@ -20,7 +20,7 @@
       </div>
 
       <!-- Stats Grid -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Monitored Assets -->
         <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -58,7 +58,7 @@
         </Card>
 
         <!-- Active Work Orders -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" @click="router.push('/assets/work-orders')">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Active WOs</CardTitle>
             <ClipboardList class="h-4 w-4 text-orange-500" />
@@ -66,6 +66,30 @@
           <CardContent>
             <div class="text-3xl font-black text-slate-900 dark:text-white">{{ activeWorkOrdersCount }}</div>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Pending or in-progress jobs</p>
+          </CardContent>
+        </Card>
+
+        <!-- Low Stock Inventory -->
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" :class="lowStockInventoryCount > 0 ? 'border-orange-200 dark:border-orange-900 bg-orange-50/5' : ''" @click="router.push('/assets/inventory')">
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Inv. Alerts</CardTitle>
+            <Package class="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-3xl font-black text-slate-900 dark:text-white" :class="lowStockInventoryCount > 0 ? 'text-orange-600 dark:text-orange-400' : ''">{{ lowStockInventoryCount }}</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">General items below min stock</p>
+          </CardContent>
+        </Card>
+
+        <!-- Low Stock Spare Parts -->
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" :class="lowStockSparepartsCount > 0 ? 'border-red-200 dark:border-red-900 bg-red-50/5' : ''" @click="router.push('/assets/spareparts')">
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Part Alerts</CardTitle>
+            <Settings class="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-3xl font-black text-slate-900 dark:text-white" :class="lowStockSparepartsCount > 0 ? 'text-red-600 dark:text-red-400' : ''">{{ lowStockSparepartsCount }}</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Machine parts need reorder</p>
           </CardContent>
         </Card>
       </div>
@@ -174,16 +198,20 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Cpu, CheckCircle, AlertTriangle, ClipboardList, ChevronRight } from '@lucide/vue';
+import { Cpu, CheckCircle, AlertTriangle, ClipboardList, ChevronRight, Package, Settings } from '@lucide/vue';
 import { getAccessToken, authState } from '@/store/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989/api/v1';
+const router = useRouter();
 
 const isLoading = ref(true);
 const assets = ref([]);
 const workOrders = ref([]);
+const inventory = ref([]);
+const spareparts = ref([]);
 
 const fetchDashboardData = async () => {
   isLoading.value = true;
@@ -205,6 +233,18 @@ const fetchDashboardData = async () => {
     const woResponse = await fetch(`${API_BASE_URL}/asset/workorders/`, { headers });
     if (woResponse.ok) {
       workOrders.value = await woResponse.json();
+    }
+
+    // Fetch inventory
+    const invResponse = await fetch(`${API_BASE_URL}/asset/inventory/`, { headers });
+    if (invResponse.ok) {
+      inventory.value = await invResponse.json();
+    }
+
+    // Fetch spareparts
+    const spResponse = await fetch(`${API_BASE_URL}/asset/spareparts/${queryString}`, { headers });
+    if (spResponse.ok) {
+      spareparts.value = await spResponse.json();
     }
   } catch (error) {
     console.error('Failed to fetch Assets Dashboard data:', error);
@@ -236,6 +276,14 @@ const activeWorkOrders = computed(() => {
 
 const activeWorkOrdersCount = computed(() => {
   return activeWorkOrders.value.length;
+});
+
+const lowStockInventoryCount = computed(() => {
+  return inventory.value.filter(i => i.current_stock <= i.minimum_stock).length;
+});
+
+const lowStockSparepartsCount = computed(() => {
+  return spareparts.value.filter(s => s.quantity_on_hand <= s.reorder_level).length;
 });
 
 const criticalAssets = computed(() => {
