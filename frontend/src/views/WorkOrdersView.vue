@@ -178,6 +178,51 @@
               <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
+
+          <!-- Materials Section -->
+          <div v-if="isEditMode" class="mt-8 border-t border-slate-200 dark:border-slate-800 pt-6">
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white uppercase mb-4 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--color-saipem-tertiary)]"><path d="M21.73 18l-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Materials Used
+            </h4>
+            
+            <ul class="space-y-2 mb-4" v-if="woForm.materials && woForm.materials.length > 0">
+              <li v-for="mat in woForm.materials" :key="mat.id" class="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800">
+                <div>
+                  <p class="font-bold text-slate-800 dark:text-slate-200">{{ mat.part_name }}</p>
+                  <p class="text-[10px] text-slate-500">P/N: {{ mat.part_number }} | Added: {{ new Date(mat.added_at).toLocaleDateString() }}</p>
+                </div>
+                <div class="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded font-black text-xs border border-orange-200 dark:border-orange-800/50">
+                  {{ mat.quantity_used }}x
+                </div>
+              </li>
+            </ul>
+            <div v-else class="text-center py-4 bg-slate-50 dark:bg-slate-950 rounded-lg mb-4 text-slate-500 border border-slate-200 dark:border-slate-800">
+              No materials recorded yet.
+            </div>
+
+            <div class="grid grid-cols-12 gap-2 items-end bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <div class="col-span-7">
+                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Spare Part</label>
+                <select v-model="materialForm.spare_part_id" class="w-full px-2 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-[var(--color-saipem-tertiary)]">
+                  <option value="" disabled>Select Part</option>
+                  <option v-for="sp in allSpareParts" :key="sp.id" :value="sp.id" :disabled="sp.quantity_on_hand <= 0">
+                    {{ sp.part_name }} (Stock: {{ sp.quantity_on_hand }})
+                  </option>
+                </select>
+              </div>
+              <div class="col-span-3">
+                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Qty</label>
+                <input v-model.number="materialForm.quantity_used" type="number" min="1" class="w-full px-2 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-[var(--color-saipem-tertiary)]">
+              </div>
+              <div class="col-span-2">
+                <button type="button" @click="addMaterialToWo" :disabled="isAddingMaterial || !materialForm.spare_part_id" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white font-bold rounded transition text-xs flex justify-center items-center h-[34px]">
+                  <span v-if="!isAddingMaterial">Add</span>
+                  <svg v-else class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
           
           <div class="flex gap-3 pt-4 border-t border-slate-150 dark:border-slate-850 mt-6">
             <button type="button" @click="showWoModal = false" class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition font-bold">
@@ -206,6 +251,7 @@ const workOrders = ref([])
 const vessels = ref([])
 const allAssets = ref([])
 const allMachinery = ref([])
+const allSpareParts = ref([])
 const showWoModal = ref(false)
 const isEditMode = ref(false)
 
@@ -218,8 +264,15 @@ const woForm = ref({
   priority: 'MEDIUM',
   scheduled_date: new Date().toISOString().split('T')[0],
   status: 'PENDING',
-  created_by: authState.username || 'Admin'
+  created_by: authState.username || 'Admin',
+  materials: []
 })
+
+const materialForm = ref({
+  spare_part_id: '',
+  quantity_used: 1
+})
+const isAddingMaterial = ref(false)
 
 const filteredAssets = computed(() => {
   if (!woForm.value.vessel) return []
@@ -262,12 +315,14 @@ const fetchVessels = async () => {
 const fetchAssetsAndMachinery = async () => {
   try {
     const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-    const [assetRes, macRes] = await Promise.all([
+    const [assetRes, macRes, spareRes] = await Promise.all([
       fetch(`${API_BASE_URL}/asset/assets/`, { headers }),
-      fetch(`${API_BASE_URL}/asset/machinery/`, { headers })
+      fetch(`${API_BASE_URL}/asset/machinery/`, { headers }),
+      fetch(`${API_BASE_URL}/asset/spareparts/`, { headers })
     ])
     if (assetRes.ok) allAssets.value = await assetRes.json()
     if (macRes.ok) allMachinery.value = await macRes.json()
+    if (spareRes.ok) allSpareParts.value = await spareRes.json()
   } catch (error) {
     console.error("Error fetching assets/machinery:", error)
   }
@@ -284,7 +339,8 @@ const openWoModal = () => {
     priority: 'MEDIUM',
     scheduled_date: new Date().toISOString().split('T')[0],
     status: 'PENDING',
-    created_by: authState.username || 'Admin'
+    created_by: authState.username || 'Admin',
+    materials: []
   }
   showWoModal.value = true
 }
@@ -300,9 +356,43 @@ const openEditModal = (wo) => {
     priority: wo.priority,
     scheduled_date: wo.scheduled_date,
     status: wo.status,
-    created_by: wo.created_by || authState.username || 'Admin'
+    created_by: wo.created_by || authState.username || 'Admin',
+    materials: wo.materials || []
   }
   showWoModal.value = true
+}
+
+const addMaterialToWo = async () => {
+  if (!materialForm.value.spare_part_id) return
+  isAddingMaterial.value = true
+  try {
+    const response = await fetch(`${API_BASE_URL}/asset/workorders/${woForm.value.wo_id}/add_material/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      },
+      body: JSON.stringify(materialForm.value)
+    })
+    
+    if (response.ok) {
+      const updatedWo = await response.json()
+      woForm.value.materials = updatedWo.materials
+      toast.success('Material added and stock deducted automatically!')
+      materialForm.value = { spare_part_id: '', quantity_used: 1 }
+      fetchWorkOrders() // update list in background
+      // Refresh spare parts to show updated stock
+      const spareRes = await fetch(`${API_BASE_URL}/asset/spareparts/`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } })
+      if (spareRes.ok) allSpareParts.value = await spareRes.json()
+    } else {
+      const err = await response.json()
+      toast.error(err.error || 'Failed to add material')
+    }
+  } catch (error) {
+    toast.error('Network error')
+  } finally {
+    isAddingMaterial.value = false
+  }
 }
 
 const submitWo = async () => {

@@ -207,6 +207,36 @@ def workorder_detail(request, wo_id):
         return Response({"message": "Work order deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 
+@api_view(['POST'])
+def workorder_add_material(request, wo_id):
+    """Add spare part material to a work order"""
+    try:
+        workorder = WorkOrder.objects.get(wo_id=wo_id)
+    except WorkOrder.DoesNotExist:
+        return Response({"error": "Work order not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    spare_part_id = request.data.get('spare_part_id')
+    quantity = request.data.get('quantity_used', 1)
+    
+    try:
+        spare_part = SparePart.objects.get(pk=spare_part_id)
+    except SparePart.DoesNotExist:
+        return Response({"error": "Spare part not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    if spare_part.quantity_on_hand < int(quantity):
+        return Response({"error": f"Insufficient stock. Only {spare_part.quantity_on_hand} available."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    from .models import WorkOrderMaterial
+    material = WorkOrderMaterial.objects.create(
+        work_order=workorder,
+        spare_part=spare_part,
+        quantity_used=int(quantity)
+    )
+    
+    serializer = WorkOrderSerializer(workorder)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
 # ==========================================
 # 6. MAINTENANCE TASK API
 # ==========================================
