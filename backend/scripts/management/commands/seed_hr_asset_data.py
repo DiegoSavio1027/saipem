@@ -4,6 +4,8 @@ from hr_module.models import Employee
 from asset_module.models import Vessel, Asset, MaintenanceTask, InventoryItem, MachineryEquipment, WorkOrder
 from hr_module.models import Roster, VesselActivity, Position
 from hse_module.hse_pob.models import WorkLocation
+from django.contrib.auth.models import User, Group
+
 
 
 class Command(BaseCommand):
@@ -82,7 +84,33 @@ class Command(BaseCommand):
             }
         ]
 
+        # Ensure Groups exist
+        groups_data = ['Admin', 'HR Staff', 'Chief Engineer', 'Worker', 'Safety Officer']
+        for group_name in groups_data:
+            Group.objects.get_or_create(name=group_name)
+
+        # Mapping for roles and default passwords
+        group_mapping = {
+            'System Administrator': 'Admin',
+            'HR Staff': 'HR Staff',
+            'Chief Engineer': 'Chief Engineer',
+            'Safety Officer': 'Safety Officer',
+            'Worker': 'Worker',
+            'Deck Foreman': 'Worker',
+            'Rig Manager': 'Worker',
+            'Scaffolder': 'Worker',
+        }
+
+        password_mapping = {
+            'admin': 'admin123',
+            'hr_staff': 'hr123',
+            'chief_engineer': 'chief123',
+            'worker': 'worker123',
+            'safety_officer': 'safety123',
+        }
+
         for emp_data in employees_data:
+            # 1. Update/Create Employee record
             employee, created = Employee.objects.update_or_create(
                 emp_id=emp_data['emp_id'],
                 defaults={
@@ -98,6 +126,44 @@ class Command(BaseCommand):
                 self.stdout.write(f"✓ Created employee: {employee.emp_id} - {employee.full_name}")
             else:
                 self.stdout.write(f"✓ Updated employee: {employee.emp_id} - {employee.full_name}")
+
+            # 2. Update/Create Django User account for authentication
+            names = emp_data['full_name'].split(' ', 1)
+            first_name = names[0]
+            last_name = names[1] if len(names) > 1 else ''
+            username = emp_data['emp_id']
+            email = emp_data['email']
+            group_name = group_mapping.get(emp_data['job_role'], 'Worker')
+            password = password_mapping.get(username, 'saipem123')
+
+            user, user_created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'email': email,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'is_superuser': (group_name == 'Admin'),
+                    'is_staff': (group_name == 'Admin')
+                }
+            )
+            # Enforce password and group membership
+            user.set_password(password)
+            user.save()
+            group = Group.objects.get(name=group_name)
+            user.groups.add(group)
+            
+            if user_created:
+                self.stdout.write(f"  ✓ Created login account for '{username}' (Password: '{password}', Role: '{group_name}')")
+            else:
+                self.stdout.write(f"  ✓ Ensured login account exists for '{username}' (Password: '{password}', Role: '{group_name}')")
+
+            # 3. Synchronize UserProfile
+            if hasattr(user, 'profile'):
+                user.profile.job_role = emp_data['job_role']
+                user.profile.roster_status = emp_data['roster_status']
+                user.profile.mcu_status = emp_data['mcu_status']
+                user.profile.mcu_expiry = emp_data['mcu_expiry']
+                user.profile.save()
 
         self.stdout.write(f"\n✓ Total employees: {Employee.objects.count()}")
 
