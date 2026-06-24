@@ -22,10 +22,13 @@
       <!-- Stats Grid -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Total Crew -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+          <div class="h-1 bg-blue-500 w-full" />
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
             <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Total Crew</CardTitle>
-            <Users class="h-4 w-4 text-blue-500" />
+            <div class="bg-blue-50 dark:bg-blue-950/20 p-2 rounded-lg border border-blue-200 dark:border-blue-900/30">
+              <Users class="h-4 w-4 text-blue-500" />
+            </div>
           </CardHeader>
           <CardContent>
             <div class="text-3xl font-black text-slate-900 dark:text-white">{{ stats.total_crew }}</div>
@@ -34,10 +37,13 @@
         </Card>
 
         <!-- Onboard Crew -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+          <div class="h-1 bg-[var(--color-saipem-tertiary)] w-full" />
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
             <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Onboard Crew</CardTitle>
-            <Ship class="h-4 w-4 text-orange-500" />
+            <div class="bg-orange-50 dark:bg-orange-950/20 p-2 rounded-lg border border-orange-200 dark:border-orange-900/30">
+              <Ship class="h-4 w-4 text-[var(--color-saipem-tertiary)]" />
+            </div>
           </CardHeader>
           <CardContent>
             <div class="text-3xl font-black text-slate-900 dark:text-white">{{ stats.onboard_crew }}</div>
@@ -46,22 +52,28 @@
         </Card>
 
         <!-- MCU Alerts -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow" :class="stats.mcu_alerts > 0 ? 'border-red-200 dark:border-red-950 bg-red-50/5' : ''">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden" :class="stats.mcu_alerts > 0 ? 'border-red-200 dark:border-red-900' : ''">
+          <div class="h-1 w-full" :class="stats.mcu_alerts > 0 ? 'bg-red-500' : 'bg-slate-200 dark:bg-slate-700'" />
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
             <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">MCU Alerts</CardTitle>
-            <AlertTriangle class="h-4 w-4 text-red-500" :class="stats.mcu_alerts > 0 ? 'animate-pulse' : ''" />
+            <div class="p-2 rounded-lg border" :class="stats.mcu_alerts > 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'">
+              <AlertTriangle class="h-4 w-4 text-red-500" :class="stats.mcu_alerts > 0 ? 'animate-pulse' : 'opacity-40'" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div class="text-3xl font-black text-slate-900 dark:text-white" :class="stats.mcu_alerts > 0 ? 'text-red-600 dark:text-red-400' : ''">{{ stats.mcu_alerts }}</div>
+            <div class="text-3xl font-black" :class="stats.mcu_alerts > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'">{{ stats.mcu_alerts }}</div>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Expired or unfit crew certificates</p>
           </CardContent>
         </Card>
 
         <!-- Est. Monthly Budget -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+          <div class="h-1 bg-green-500 w-full" />
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
             <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Est. Monthly Budget</CardTitle>
-            <DollarSign class="h-4 w-4 text-green-500" />
+            <div class="bg-green-50 dark:bg-green-950/20 p-2 rounded-lg border border-green-200 dark:border-green-900/30">
+              <DollarSign class="h-4 w-4 text-green-500" />
+            </div>
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-black text-slate-900 dark:text-white truncate">{{ formatCurrency(stats.estimated_budget) }}</div>
@@ -83,8 +95,8 @@
                 <span class="text-slate-400 font-bold uppercase tracking-wider">Active Deployments (Vessels)</span>
                 <span class="font-bold text-slate-800 dark:text-slate-200">{{ stats.active_vessels }} / {{ stats.total_vessels }} Vessels</span>
               </div>
-              <div class="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-800">
-                <div :style="{ width: `${vesselDeploymentRate}%` }" class="h-full bg-blue-500 transition-all duration-500"></div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+                <div :style="{ width: `${vesselDeploymentRate}%` }" class="h-full bg-gradient-to-r from-blue-500 to-[var(--color-saipem-tertiary)] transition-all duration-700 rounded-full"></div>
               </div>
             </div>
 
