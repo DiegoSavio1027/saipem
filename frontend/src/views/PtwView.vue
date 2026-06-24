@@ -145,6 +145,7 @@ import { authState, getAccessToken } from '@/store/auth';
 import { getCsrfToken } from '@/utils/csrf';
 import { toast } from 'vue-sonner';
 import { ptwSocketState, initializePTWWebSocket, closePTWWebSocket } from '@/store/websocket';
+import { addToQueue } from '@/utils/offlineSync';
 
 const router = useRouter();
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989/api/v1';
@@ -281,7 +282,31 @@ const submitPTW = async (formDataPayload) => {
             toast.error("Failed", { description: errorMsg });
         }
     } catch (error) {
-        console.error("Error submitting PTW:", error);
+        console.error("Error submitting PTW, queuing offline:", error);
+        
+        // Queue offline on connection failure
+        addToQueue('PTW_CREATE', `${API_BASE_URL}/hse/ptw/`, formDataPayload, {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'X-CSRFToken': getCsrfToken() || ''
+        });
+
+        // Insert temporary mock permit into the list
+        const mockPtw = {
+            id: Date.now(),
+            permit_id: 'PTW-QUEUED',
+            emp_id: formDataPayload.emp_id,
+            applicant: formDataPayload.emp_id,
+            permit_type: formDataPayload.permit_type,
+            permit_type_display: formDataPayload.permit_type.replace('_', ' '),
+            wo_id: formDataPayload.wo_id,
+            deck_location: formDataPayload.deck_location,
+            deck_location_name: 'Queued (Offline)',
+            status: 'PENDING',
+            status_display: 'Offline Queued',
+            created_at: new Date().toISOString()
+        };
+        ptwList.value = [mockPtw, ...ptwList.value];
+        showModal.value = false;
     }
 };
 
@@ -482,10 +507,12 @@ const bulkRejectPTW = async (ptw_ids) => {
 onMounted(async () => {
     await fetchPtw();
     initializePTWWebSocket();
+    window.addEventListener('offline-sync-complete', fetchPtw);
 });
 
 onUnmounted(() => {
     closePTWWebSocket();
+    window.removeEventListener('offline-sync-complete', fetchPtw);
 });
 
 watch(() => ptwSocketState.lastUpdate, () => {

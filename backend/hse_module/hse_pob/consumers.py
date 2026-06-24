@@ -47,7 +47,7 @@ class POBConsumer(AsyncWebsocketConsumer):
             result.append({
                 'action': log.action,
                 'employee_name': employee_name,
-                'location': log.deck_location,
+                'location': log.deck_location.deck_name if log.deck_location else "Unknown",
                 'timestamp': log.timestamp.isoformat()
             })
         return result

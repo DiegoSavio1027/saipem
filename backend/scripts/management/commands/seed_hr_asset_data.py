@@ -415,30 +415,31 @@ class Command(BaseCommand):
         # Clear existing rosters to prevent duplicate get_or_create errors
         Roster.objects.all().delete()
         
+        today_date = date.today()
         rosters_data = [
             {
                 'emp_id': 'chief_engineer',
                 'vessel_name': 'Saipem 7000',
-                'start_date': date(2026, 5, 1),
-                'end_date': date(2026, 6, 15)
+                'start_date': today_date - timedelta(days=15),
+                'end_date': today_date + timedelta(days=30)
             },
             {
                 'emp_id': 'worker',
                 'vessel_name': 'Saipem 7000',
-                'start_date': date(2026, 5, 10),
-                'end_date': date(2026, 6, 20)
+                'start_date': today_date - timedelta(days=15),
+                'end_date': today_date + timedelta(days=30)
             },
             {
                 'emp_id': 'EMP-005',
                 'vessel_name': 'Castorone',
-                'start_date': date(2026, 5, 20),
-                'end_date': date(2026, 7, 1)
+                'start_date': today_date - timedelta(days=15),
+                'end_date': today_date + timedelta(days=30)
             },
             {
                 'emp_id': 'safety_officer',
                 'vessel_name': 'Saipem 7000',
-                'start_date': date(2026, 6, 1),
-                'end_date': date(2026, 6, 30)
+                'start_date': today_date - timedelta(days=15),
+                'end_date': today_date + timedelta(days=30)
             }
         ]
 

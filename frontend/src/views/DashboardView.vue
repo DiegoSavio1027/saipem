@@ -117,6 +117,7 @@
     :open="toolboxTalkDialogOpen"
     :permit-id="selectedPTW?.permit_id || ''"
     :ptw-id="selectedPTWId || 0"
+    :ptw="selectedPTW"
     @update:open="toolboxTalkDialogOpen = $event"
     @confirm="handleStartWorkConfirmed"
   />
@@ -143,6 +144,7 @@ import { authState, getAccessToken } from '@/store/auth';
 import { websocketState } from '@/store/websocket';
 import { getCsrfToken } from '@/utils/csrf';
 import { toast } from 'vue-sonner';
+import { addToQueue } from '@/utils/offlineSync';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989/api/v1';
 
@@ -274,7 +276,30 @@ const submitPTW = async (formDataPayload) => {
             toast.error("Failed", { description: errorMsg });
         }
     } catch (error) {
-        console.error("Error submitting PTW:", error);
+        console.error("Error submitting PTW, queuing offline:", error);
+        
+        addToQueue('PTW_CREATE', `${API_BASE_URL}/hse/ptw/`, formDataPayload, {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'X-CSRFToken': getCsrfToken() || ''
+        });
+
+        // Insert temporary mock permit into list
+        const mockPtw = {
+            id: Date.now(),
+            permit_id: 'PTW-QUEUED',
+            emp_id: formDataPayload.emp_id,
+            applicant: formDataPayload.emp_id,
+            permit_type: formDataPayload.permit_type,
+            permit_type_display: formDataPayload.permit_type.replace('_', ' '),
+            wo_id: formDataPayload.wo_id,
+            deck_location: formDataPayload.deck_location,
+            deck_location_name: 'Queued (Offline)',
+            status: 'PENDING',
+            status_display: 'Offline Queued',
+            created_at: new Date().toISOString()
+        };
+        allPTWs.value = [mockPtw, ...allPTWs.value];
+        showModal.value = false;
     }
 };
 
@@ -417,27 +442,41 @@ const startWork = async (ptw_id) => {
     }
 };
 
-const handleStartWorkConfirmed = async (ptw_id) => {
+const handleStartWorkConfirmed = async (payload) => {
+    const { ptwId, ...jsaTbtData } = payload;
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/hse/ptw/${ptw_id}/start_work/`, {
+        const response = await fetch(`${API_BASE_URL}/hse/ptw/${ptwId}/start_work/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCsrfToken() || '',
                 'Authorization': `Bearer ${getAccessToken()}`
-            }
+            },
+            body: JSON.stringify(jsaTbtData)
         });
 
         if (response.ok) {
             fetchInitialData();
-            toast.success("Success", { description: "Work started successfully. You are now checked in." });
+            toast.success("Success", { description: "Work started successfully. Pre-job checks saved and crew checked in." });
         } else {
             const error = await response.json();
             toast.error("Failed", { description: error.error || "Failed to start work." });
         }
     } catch (error) {
-        console.error("Error starting work:", error);
-        toast.error("Error", { description: "Server connection failed." });
+        console.error("Error starting work, queuing offline:", error);
+        
+        addToQueue('START_WORK', `${API_BASE_URL}/hse/ptw/${ptwId}/start_work/`, jsaTbtData, {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'X-CSRFToken': getCsrfToken() || ''
+        });
+
+        // Update local status of the permit
+        const ptw = allPTWs.value.find(p => p.id === ptwId);
+        if (ptw) {
+            ptw.status = 'IN_PROGRESS';
+            ptw.status_display = 'In Progress (Queued)';
+        }
     }
 };
 
@@ -558,6 +597,7 @@ onMounted(async () => {
 
     // Store interval ID for cleanup
     window.dashboardStatusInterval = statusInterval;
+    window.addEventListener('offline-sync-complete', initializeDashboard);
 });
 
 onUnmounted(() => {
@@ -566,5 +606,6 @@ onUnmounted(() => {
         clearInterval(window.dashboardStatusInterval);
         window.dashboardStatusInterval = null;
     }
+    window.removeEventListener('offline-sync-complete', initializeDashboard);
 });
 </script>

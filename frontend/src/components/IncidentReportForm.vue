@@ -178,6 +178,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { toast } from 'vue-sonner';
 import { getCsrfToken } from '@/utils/csrf';
 import { authState, getAccessToken } from '@/store/auth';
+import { addToQueue, fileToBase64 } from '@/utils/offlineSync';
 
 const props = defineProps({
   open: Boolean,
@@ -348,8 +349,48 @@ const handleSubmit = async () => {
       toast.error("Failed", { description: error.detail || "Failed to report incident" });
     }
   } catch (error) {
-    console.error("Error reporting incident:", error);
-    toast.error("Error", { description: "Server connection failed" });
+    console.error("Error reporting incident, attempting to queue offline:", error);
+    
+    try {
+      const base64Image = await fileToBase64(formData.value.proof_image);
+      const payload = {
+        severity: formData.value.severity,
+        location: formData.value.location,
+        description: formData.value.description,
+        reported_by: formData.value.reported_by,
+        incident_date: new Date().toISOString(),
+        employee_name: formData.value.employee_name || '',
+        vessel_id: formData.value.vessel_id || '',
+        proof_image_base64: base64Image,
+        proof_image_name: formData.value.proof_image.name,
+        proof_image_type: formData.value.proof_image.type
+      };
+
+      addToQueue('INCIDENT_CREATE', `${API_BASE_URL}/hse/incidents/`, payload, {
+        'X-CSRFToken': getCsrfToken() || '',
+        'Authorization': `Bearer ${getAccessToken()}`
+      });
+
+      // Reset form
+      formData.value = {
+        severity: '',
+        location: '',
+        description: '',
+        employee_name: '',
+        proof_image: null,
+        reported_by: props.empId,
+        vessel_id: authState.selectedVessel?.asset_id || authState.assignedVessel?.asset_id || ''
+      };
+      if (fileInput.value) {
+        fileInput.value.value = '';
+      }
+      
+      emit('incident-reported', { offline: true });
+      emit('update:open', false);
+    } catch (err) {
+      console.error("Failed to queue offline incident:", err);
+      toast.error("Error", { description: "Failed to queue incident report locally." });
+    }
   } finally {
     isSubmitting.value = false;
   }

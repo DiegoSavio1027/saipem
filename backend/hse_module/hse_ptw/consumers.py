@@ -46,7 +46,8 @@ class PTWConsumer(AsyncWebsocketConsumer):
                 'employee_name': employee_name,
                 'permit_type': ptw.permit_type,
                 'status': ptw.status,
-                'deck_location': ptw.deck_location,
+                'deck_location': ptw.deck_location.id if ptw.deck_location else None,
+                'deck_location_name': ptw.deck_location.deck_name if ptw.deck_location else None,
                 'created_at': ptw.created_at.isoformat(),
                 'approved_by': ptw.approved_by,
                 'approved_at': ptw.approved_at.isoformat() if ptw.approved_at else None

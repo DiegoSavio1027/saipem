@@ -201,6 +201,29 @@ class PermitToWorkViewSet(viewsets.ModelViewSet):
             )
 
         ptw.status = 'IN_PROGRESS'
+
+        # Parse JSA and TBT checklist details from request
+        import base64
+        from django.core.files.base import ContentFile
+
+        jsa_ppe_checked = request.data.get('jsa_ppe_checked', [])
+        jsa_loto_applied = request.data.get('jsa_loto_applied', False)
+        tbt_signatures = request.data.get('tbt_signatures', [])
+        tbt_photo_data = request.data.get('tbt_photo')
+
+        ptw.jsa_ppe_checked = jsa_ppe_checked
+        ptw.jsa_loto_applied = jsa_loto_applied
+        ptw.tbt_signatures = tbt_signatures
+        ptw.is_toolbox_talk_done = True
+
+        if tbt_photo_data and isinstance(tbt_photo_data, str) and tbt_photo_data.startswith('data:image'):
+            try:
+                fmt, imgstr = tbt_photo_data.split(';base64,')
+                ext = fmt.split('/')[-1]
+                ptw.tbt_photo.save(f"tbt_{ptw.permit_id}.{ext}", ContentFile(base64.b64decode(imgstr)), save=False)
+            except Exception:
+                pass
+
         ptw.save()
 
         # Phase 5 Integration: Update WorkOrder Status

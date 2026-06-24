@@ -281,7 +281,7 @@ def calculate_location_statistics(target_date=None):
 
         # Count PTWs for this location
         ptw_issued = PermitToWork.objects.filter(
-            deck_location=location.deck_name,
+            deck_location=location,
             created_at__date=target_date
         ).count()
 

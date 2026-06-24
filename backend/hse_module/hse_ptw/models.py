@@ -31,6 +31,12 @@ class PermitToWork(models.Model):
     permit_type = models.CharField(max_length=50, choices=PERMIT_TYPE_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
 
+    # Digitized JSA / Toolbox Talk (TBT)
+    tbt_photo = models.ImageField(upload_to='tbt_photos/', blank=True, null=True)
+    jsa_ppe_checked = models.JSONField(default=list, blank=True)
+    jsa_loto_applied = models.BooleanField(default=False)
+    tbt_signatures = models.JSONField(default=list, blank=True)
+
     # Approval
     approved_by = models.CharField(max_length=100, blank=True, null=True, verbose_name="Safety Officer")
     approved_at = models.DateTimeField(blank=True, null=True)

@@ -171,7 +171,8 @@ class PermitToWorkSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'approved_by', 'approved_by_name', 'approved_at', 'signature',
             'rejected_by', 'rejected_by_name', 'rejected_at', 'rejection_reason', 'completion_notes',
             'is_toolbox_talk_done', 'closed_by', 'closed_by_name', 'closed_at', 'closing_notes', 'created_at', 'updated_at',
-            'employee', 'work_order', 'assigned_crew', 'assigned_personnel_ids'
+            'employee', 'work_order', 'assigned_crew', 'assigned_personnel_ids',
+            'tbt_photo', 'jsa_ppe_checked', 'jsa_loto_applied', 'tbt_signatures'
         ]
         read_only_fields = ['id', 'permit_id', 'created_at', 'updated_at', 'vessel_name', 'deck_location_name']
 
