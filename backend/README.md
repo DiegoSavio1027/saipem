@@ -153,9 +153,20 @@ python manage.py migrate
 ```
 
 **6. Seed initial data**
+Jalankan perintah berikut secara berurutan untuk mengisi *database* dengan data awal (dummy data) yang lengkap:
+
 ```bash
-python manage.py seed_hse_data         # Initialize system status
-python manage.py seed_auth_users       # Create test users with JWT authentication
+# 1. Initialize system status
+python manage.py seed_hse_data
+
+# 2. Create test users & groups
+python manage.py seed_auth_users
+
+# 3. Create HR employees, roster, & assets data
+python manage.py seed_hr_asset_data
+
+# 4. Create inventory items
+python manage.py seed_inventory
 ```
 
 **7. Create superuser (admin)**
@@ -164,11 +175,24 @@ python manage.py createsuperuser
 ```
 
 **8. Start development server**
+Buka terminal dan jalankan backend server:
 ```bash
 python manage.py runserver 0.0.0.0:8989
 ```
 
 Server runs at: `http://localhost:8989`
+
+**9. Run IoT Telemetry Simulator (Opsional namun Penting)**
+Buka terminal **baru** (biarkan server tetap berjalan), lalu jalankan simulator IoT untuk menghasilkan data sensor suhu & getaran mesin secara *real-time*:
+```bash
+python manage.py run_iot_simulator
+```
+
+> **💡 Catatan Integrasi Production (Koneksi ke Sistem IoT Asli)**  
+> Script simulator di atas menginjeksi data langsung ke *database* menggunakan Django ORM untuk kemudahan *development*.  
+> Untuk menghubungkan sistem dengan **perangkat IoT / Sensor fisik sesungguhnya** (seperti NodeMCU, PLC, atau *Edge Gateway*), Anda bisa menerapkan salah satu arsitektur berikut ke depannya:
+> 1. **Via REST API (HTTP POST)**: Tambahkan endpoint *ingestion* baru (contoh: `POST /api/v1/asset/telemetry/ingest/`) di backend yang siap menerima payload JSON dari perangkat sensor Anda, lalu menyimpannya ke model `TelemetryLog`.
+> 2. **Via MQTT Broker (Rekomendasi Industri)**: Setup sebuah *broker* MQTT (seperti Mosquitto/EMQX). Biarkan sensor *publish* data ke topik MQTT, lalu jalankan sebuah *worker script* di server (menggunakan *library* `paho-mqtt` atau Celery) yang *subscribe* ke topik tersebut dan mencatat datanya ke dalam sistem Saipem UOS secara asinkron.
 
 ---
 

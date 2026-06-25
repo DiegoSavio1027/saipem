@@ -296,45 +296,24 @@ Panduan lengkap untuk *setup project* HSE Management System untuk tim *developme
 
 ## 📋 Quick Start (Clone Repository)
 
-### Untuk Teman yang Ingin Clone Repository
+Repositori ini bersifat **Public**. Anda dapat langsung melakukan clone tanpa perlu autentikasi khusus.
 
-**Repository**: `https://github.com/DiegoSavio1027/saipem.git` (Private)
+**Repository**: `https://github.com/DiegoSavio1027/saipem.git`
 
-#### Opsi 1: Clone dengan PAT (Personal Access Token)
-
-```bash
-# Clone dengan PAT embedded
-git clone https://<YOUR_GITHUB_USERNAME>:<YOUR_PERSONAL_ACCESS_TOKEN>@github.com/DiegoSavio1027/saipem.git
-
-cd saipem-hse
-```
-
-#### Opsi 2: Clone Normal + Input PAT saat Diminta
+#### Opsi 1: Clone dengan HTTPS (Cara Standar)
 
 ```bash
 # Clone repository
 git clone https://github.com/DiegoSavio1027/saipem.git
 
 cd saipem-hse
-
-# Saat diminta credentials:
-# Username: <YOUR_GITHUB_USERNAME>
-# Password: <YOUR_PERSONAL_ACCESS_TOKEN>
 ```
 
-#### Opsi 3: Setup SSH (Recommended untuk jangka panjang)
+#### Opsi 2: Clone dengan SSH (Rekomendasi untuk Kontributor)
 
-Jika ingin menghindari input PAT setiap kali, setup SSH key:
+Jika Anda akan sering berkontribusi dan sudah melakukan setup SSH key di GitHub:
 
 ```bash
-# Generate SSH key (jika belum punya)
-ssh-keygen -t ed25519 -C "your-email@example.com"
-
-# Copy public key
-cat ~/.ssh/id_ed25519.pub
-
-# Paste ke GitHub: Settings → SSH and GPG keys → New SSH key
-
 # Clone dengan SSH
 git clone git@github.com:DiegoSavio1027/saipem.git
 
@@ -406,12 +385,20 @@ python manage.py migrate
 ```
 
 **6. Seed initial data**
+Jalankan perintah berikut secara berurutan untuk mengisi *database* dengan data awal (dummy data) yang lengkap:
+
 ```bash
-# Initialize system status
+# 1. Initialize system status
 python manage.py seed_hse_data
 
-# Create test users
+# 2. Create test users & groups
 python manage.py seed_auth_users
+
+# 3. Create HR employees, roster, & assets data
+python manage.py seed_hr_asset_data
+
+# 4. Create inventory items
+python manage.py seed_inventory
 ```
 
 **7. Create superuser (admin)**
@@ -420,19 +407,39 @@ python manage.py createsuperuser
 ```
 
 **8. Start development server**
+Buka terminal dan jalankan backend server:
 ```bash
 python manage.py runserver 0.0.0.0:8989
 ```
 
 Backend runs at: `http://localhost:8989`
 
+**9. Run IoT Telemetry Simulator (Opsional namun Penting)**
+Buka terminal **baru** (biarkan server tetap berjalan), lalu jalankan simulator IoT untuk menghasilkan data sensor suhu & getaran mesin secara *real-time*:
+```bash
+python manage.py run_iot_simulator
+```
+
+> **💡 Catatan Integrasi Production (Koneksi ke Sistem IoT Asli)**  
+> Script simulator di atas menginjeksi data langsung ke *database* menggunakan Django ORM untuk kemudahan *development*.  
+> Untuk menghubungkan sistem dengan **perangkat IoT / Sensor fisik sesungguhnya** (seperti NodeMCU, PLC, atau *Edge Gateway*), Anda bisa menerapkan salah satu arsitektur berikut ke depannya:
+> 1. **Via REST API (HTTP POST)**: Tambahkan endpoint *ingestion* baru (contoh: `POST /api/v1/asset/telemetry/ingest/`) di backend yang siap menerima payload JSON dari perangkat sensor Anda, lalu menyimpannya ke model `TelemetryLog`.
+> 2. **Via MQTT Broker (Rekomendasi Industri)**: Setup sebuah *broker* MQTT (seperti Mosquitto/EMQX). Biarkan sensor *publish* data ke topik MQTT, lalu jalankan sebuah *worker script* di server (menggunakan *library* `paho-mqtt` atau Celery) yang *subscribe* ke topik tersebut dan mencatat datanya ke dalam sistem Saipem UOS secara asinkron.
+
 ### Test Users (After Seeding)
 
-| Role | Username | Password |
-|------|----------|----------|
-| Admin | admin | admin123 |
-| Safety Officer | safety_officer | safety123 |
-| Worker | worker | worker123 |
+| Role | Username | Password | Keterangan |
+|------|----------|----------|------------|
+| Admin | `admin` | `admin123` | System Administrator |
+| HR Staff | `hr_staff` | `hr123` | HR Dashboard & Data |
+| Chief Engineer | `chief_engineer_hq` | `chief123` | Chief Engineer (HQ) |
+| Chief Engineer | `chief_engineer_s7000` | `chief123` | Chief Engineer (Saipem 7000) |
+| Chief Engineer | `chief_engineer_castorone` | `chief123` | Chief Engineer (Castorone) |
+| Safety Officer | `safety_officer_hq` | `safety123` | HSE Officer (HQ) |
+| Safety Officer | `safety_officer_s7000` | `safety123` | HSE Officer (Saipem 7000) |
+| Safety Officer | `safety_officer_castorone` | `safety123` | HSE Officer (Castorone) |
+| Worker | `worker` | `worker123` | Worker (Onboard) |
+| Worker | `worker_off` | `worker123` | Worker (Available) |
 
 ---
 
@@ -484,13 +491,15 @@ npm run preview
 
 ---
 
-## 🔐 Authentication & PAT Management
+## 🔐 Authentication (Khusus untuk Push / Kontributor)
+
+Karena repositori ini **Public**, Anda dapat melakukan *clone* dan *pull* secara bebas. Namun, untuk melakukan *push* (berkontribusi), Anda tetap memerlukan autentikasi jika tidak menggunakan SSH.
 
 ### Personal Access Token (PAT) Info
 
 **Token**: Buat token baru di [GitHub Settings > Developer Settings](https://github.com/settings/tokens/new)
 
-**Permissions**: Centang `repo` (Full control of private repositories)
+**Permissions**: Centang `repo` untuk mengelola repositori (Push access).
 
 **Expiry**: Sesuai preferensi Anda (rekomendasi: 30-90 hari)
 
@@ -528,9 +537,12 @@ git push
 
 ---
 
-## 🚀 Development Workflow
+## 🚀 Development Workflow (Cara Berkontribusi)
+
+Bagi kontributor eksternal, silakan **Fork** repositori ini terlebih dahulu. Bagi tim internal, Anda bisa langsung clone dan membuat branch.
 
 ### 1. Pull Latest Changes
+Pastikan branch Anda up-to-date dengan origin.
 ```bash
 git pull origin main
 ```
