@@ -227,15 +227,15 @@
                 <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Inventory Item</label>
                 <select v-model="materialForm.spare_part_id" class="w-full px-2 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-[var(--color-saipem-tertiary)]">
                   <option value="" disabled>Select Item</option>
-                  <option v-for="sp in allInventoryItems" :key="sp.item_code" :value="sp.item_code" :disabled="sp.available_stock <= 0">
+                  <option v-for="sp in filteredInventoryItems" :key="sp.item_code" :value="sp.item_code" :disabled="sp.available_stock <= 0">
                     {{ sp.item_name }} (Avail: {{ sp.available_stock }}, Rsvd: {{ sp.quantity_reserved }})
                   </option>
                 </select>
               </div>
               <div class="col-span-3">
                 <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Qty</label>
-                <input v-model.number="materialForm.quantity_used" type="number" min="1" :max="allInventoryItems.find(i => i.item_code === materialForm.spare_part_id)?.available_stock || 1" @input="() => {
-                    const maxStock = allInventoryItems.find(i => i.item_code === materialForm.spare_part_id)?.available_stock || 1;
+                <input v-model.number="materialForm.quantity_used" type="number" min="1" :max="filteredInventoryItems.find(i => i.item_code === materialForm.spare_part_id)?.available_stock || 1" @input="() => {
+                    const maxStock = filteredInventoryItems.find(i => i.item_code === materialForm.spare_part_id)?.available_stock || 1;
                     if (materialForm.quantity_used > maxStock) materialForm.quantity_used = maxStock;
                     if (materialForm.quantity_used < 1) materialForm.quantity_used = 1;
                 }" class="w-full px-2 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-[var(--color-saipem-tertiary)]">
@@ -258,6 +258,25 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+    <!-- Confirmation Modal -->
+    <div v-if="confirmState.isOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
+        <h3 class="text-xl font-heading font-black text-slate-900 dark:text-white uppercase mb-2">
+          {{ confirmState.title }}
+        </h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-mono leading-relaxed">
+          {{ confirmState.message }}
+        </p>
+        <div class="flex gap-3 pt-4 border-t border-slate-150 dark:border-slate-850">
+          <button type="button" @click="closeConfirmModal" class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition font-bold font-mono text-xs">
+            Cancel
+          </button>
+          <button type="button" @click="executeConfirmAction" :class="[confirmState.action === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700', 'flex-1 px-4 py-2 text-white rounded-lg font-bold transition font-mono text-xs']">
+            Confirm
+          </button>
+        </div>
       </div>
     </div>
   </DashboardLayout>
@@ -309,11 +328,34 @@ const filteredAssets = computed(() => {
 
 const filteredMachinery = computed(() => {
   if (!woForm.value.vessel) return []
-  return allMachinery.value.filter(m => m.vessel === woForm.value.vessel || m.vessel_id === woForm.value.vessel)
+  let machinery = allMachinery.value.filter(m => m.vessel === woForm.value.vessel || m.vessel_id === woForm.value.vessel)
+  
+  // If an asset is selected, filter machinery to only those belonging to the selected asset
+  if (woForm.value.asset) {
+    machinery = machinery.filter(m => m.asset === woForm.value.asset || m.asset_id === woForm.value.asset)
+  }
+  
+  return machinery
 })
 
 const assignableWorkers = computed(() => {
   return vesselEmployees.value.filter(emp => !['Chief Engineer', 'Safety Officer'].includes(emp.job_role))
+})
+
+const filteredInventoryItems = computed(() => {
+  if (!woForm.value.vessel) return []
+  return allInventoryItems.value.filter(i => {
+    if (i.vessel === woForm.value.vessel || i.vessel_id === woForm.value.vessel) return true;
+    
+    // Also check if the item is linked to an asset that belongs to the selected vessel
+    if (i.asset_location) {
+      const asset = allAssets.value.find(a => a.asset_id === i.asset_location || a.id === i.asset_location);
+      if (asset && (asset.vessel === woForm.value.vessel || asset.vessel_id === woForm.value.vessel)) {
+        return true;
+      }
+    }
+    return false;
+  })
 })
 
 const fetchWorkOrders = async () => {
@@ -405,6 +447,21 @@ const fetchVesselEmployees = async (vesselId) => {
 watch(() => woForm.value.vessel, (newVessel) => {
   if (showWoModal.value) {
       fetchVesselEmployees(newVessel)
+  }
+  // Clear asset and machinery when vessel changes
+  if (isEditMode.value === false) {
+    woForm.value.asset = ''
+    woForm.value.machinery = ''
+  }
+})
+
+watch(() => woForm.value.asset, () => {
+  // Clear selected machinery if it doesn't belong to the newly selected asset
+  if (woForm.value.machinery) {
+    const isValid = filteredMachinery.value.some(m => m.id === woForm.value.machinery)
+    if (!isValid) {
+      woForm.value.machinery = ''
+    }
   }
 })
 
@@ -569,8 +626,48 @@ const submitWo = async () => {
   }
 }
 
-const deleteWo = async (id) => {
-  if (!confirm(`Delete Work Order ${id}?`)) return
+const confirmState = ref({
+  isOpen: false,
+  title: '',
+  message: '',
+  action: null,
+  payload: null
+})
+
+const openConfirmModal = (title, message, action, payload) => {
+  confirmState.value = {
+    isOpen: true,
+    title,
+    message,
+    action,
+    payload
+  }
+}
+
+const closeConfirmModal = () => {
+  confirmState.value.isOpen = false
+}
+
+const executeConfirmAction = async () => {
+  const { action, payload } = confirmState.value
+  closeConfirmModal()
+  if (action === 'delete') {
+    await performDeleteWo(payload)
+  } else if (action === 'complete') {
+    await performCompleteWorkOrder(payload)
+  }
+}
+
+const deleteWo = (id) => {
+  openConfirmModal(
+    'Delete Work Order',
+    `Are you sure you want to delete Work Order ${id}?`,
+    'delete',
+    id
+  )
+}
+
+const performDeleteWo = async (id) => {
   try {
     const response = await fetch(`${API_BASE_URL}/asset/workorders/${id}/`, {
       method: 'DELETE',
@@ -585,8 +682,16 @@ const deleteWo = async (id) => {
   }
 }
 
-const completeWorkOrder = async (woId) => {
-  if (!confirm(`Complete Work Order ${woId}? This will permanently deduct all reserved inventory materials.`)) return
+const completeWorkOrder = (woId) => {
+  openConfirmModal(
+    'Complete Work Order',
+    `Complete Work Order ${woId}? This will permanently deduct all reserved inventory materials (Current physical stock will be reduced).`,
+    'complete',
+    woId
+  )
+}
+
+const performCompleteWorkOrder = async (woId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/asset/workorders/${woId}/complete/`, {
       method: 'POST',
