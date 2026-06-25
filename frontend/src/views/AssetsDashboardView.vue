@@ -310,7 +310,17 @@ const criticalAssets = computed(() => {
     vibration: m.vibration
   }));
 
-  return [...criticalFromAssets, ...criticalFromMachinery];
+  const criticalFromInventory = inventory.value.filter(i => i.status === 'CRITICAL' || i.status === 'MAINTENANCE' || i.health_score < 80).map(i => ({
+    asset_id: i.item_code,
+    name: i.name,
+    vessel_name: i.vessel_name || i.vessel,
+    status: i.status,
+    health_score: Math.round(i.health_score || 50),
+    temperature: '-',
+    vibration: '-'
+  }));
+
+  return [...criticalFromAssets, ...criticalFromMachinery, ...criticalFromInventory];
 });
 
 onMounted(() => {
