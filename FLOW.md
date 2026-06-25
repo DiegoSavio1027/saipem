@@ -44,44 +44,49 @@ Sistem ini dirancang menggunakan konsep **"Safety Interlocks"** di mana data dar
 ```mermaid
 sequenceDiagram
     autonumber
-    actor AdminHR as Admin and HR
+    actor Admin as Admin
+    actor HR as HR Staff
     actor Engineer as Chief Engineer
-    actor Worker as Offshore Worker
+    actor Worker as Worker (Offshore Crew)
     actor Safety as Safety Officer
 
     participant VR as Vessel Registry
     participant P as Personnel
     participant RM as Roster Matrix
-    participant MT as Machinery and Telemetry
+    participant MT as Machinery & Telemetry
+    participant INV as Inventory
     participant WO as Work Orders
     participant PTW as Permit to Work
     participant POB as Live POB
 
     %% Master Data and HR Setup
-    AdminHR->>VR: Registrasi Kapal and Deck Locations
-    AdminHR->>P: Input Data Karyawan (MCU and Sertifikasi)
-    AdminHR->>RM: Plot Jadwal Kerja Crew (Kunci status MCU FIT)
+    Admin->>VR: Registrasi Kapal & Deck Locations
+    HR->>P: Input Data Karyawan (MCU & Sertifikasi)
+    HR->>RM: Plot Jadwal Kerja Crew (Kunci status MCU FIT)
 
-    %% Predictive Maintenance and Work Orders
+    %% Predictive Maintenance, Inventory & Work Orders
     Note over Engineer, MT: Pemantauan IoT Real-time
     Engineer->>MT: Deteksi sensor kritis (vibrasi atau suhu tinggi)
-    MT->>WO: Terbitkan Work Order (Auto-create)
+    MT->>WO: Terbitkan Work Order
+    Engineer->>WO: Tambahkan material ke WO
+    WO->>INV: Cek ketersediaan & Auto-booking (Qty Reserved)
 
     %% Permit to Work Validation
-    Worker->>PTW: Buat PTW baru (Pilih WO, Lokasi and Crew)
-    Note over PTW: Validasi BE: Roster Aktif, MCU Fit, and Sertifikat Kompetensi
-    Safety->>PTW: Review and Tanda Tangan Digital (Approval)
+    Worker->>PTW: Buat PTW baru (Pilih WO, Lokasi & Crew)
+    Note over PTW: Validasi BE: Roster Aktif, MCU Fit, & Sertifikat
+    Safety->>PTW: Review & Tanda Tangan Digital (Approval)
 
     %% Work Execution and POB Manifest
     Worker->>PTW: Klik "Start Work"
-    Note over PTW, POB: Memicu Status WO = IN_PROGRESS and Auto POB Check-in
+    Note over PTW, POB: Memicu Status WO = IN_PROGRESS & Auto POB Check-in
     POB->>POB: Broadcast WebSocket (Kru Masuk Deck)
 
     %% Completion and Check-out
     Worker->>PTW: Pekerjaan Selesai (Mark as Done)
     Note over PTW, POB: Auto POB Check-out (Kembali ke Safe Zone)
-    Safety->>PTW: Verifikasi Lapangan and Tutup PTW (Confirm Close)
-    Note over PTW: Auto-update Work Order = COMPLETED
+    Safety->>PTW: Verifikasi Lapangan & Tutup PTW (Confirm Close)
+    Note over PTW, INV: Auto-update Work Order = COMPLETED
+    WO->>INV: Potong stok fisik & hapus status reservasi
 ```
 
 ### Referensi Halaman & Berkas Modul:
