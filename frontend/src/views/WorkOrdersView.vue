@@ -713,6 +713,7 @@ const performCompleteWorkOrder = async (woId) => {
       const deducted = data.deducted_items?.map(i => `${i.item}: -${i.qty_deducted} (remaining: ${i.remaining_stock})`).join(', ') || 'No materials'
       toast.success(`WO ${woId} Completed!`, { description: `Inventory deducted: ${deducted}` })
       fetchWorkOrders()
+      fetchAssetsAndMachinery()
     } else {
       const err = await response.json()
       toast.error('Failed to complete WO', { description: err.error || 'Unknown error' })
