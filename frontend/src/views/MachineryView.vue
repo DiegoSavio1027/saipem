@@ -60,7 +60,7 @@
 
       <!-- Machinery Grid -->
       <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <Card v-for="mac in machinery" :key="mac.id" :class="[mac.needs_maintenance ? 'border-red-200 dark:border-red-900/50 bg-red-50/10 dark:bg-red-950/5' : '']">
+        <Card v-for="mac in filteredMachinery" :key="mac.id" :class="[mac.needs_maintenance ? 'border-red-200 dark:border-red-900/50 bg-red-50/10 dark:bg-red-950/5' : '']">
           <CardHeader class="pb-4">
             <div class="flex justify-between items-start">
               <div>
@@ -351,7 +351,7 @@ import { useRouter } from 'vue-router'
 import { 
   Plus, Edit, Trash2, ShieldAlert, Cpu, Droplets, Gauge, 
   Activity, Thermometer, PenTool, CheckCircle, X, Search 
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -442,6 +442,21 @@ const formData = ref({
   last_maintenance_date: ''
 })
 
+const healthyCount = computed(() => machinery.value.filter(m => !m.needs_maintenance).length)
+const needsMaintCount = computed(() => machinery.value.filter(m => m.needs_maintenance).length)
+
+const searchQuery = ref('')
+
+const filteredMachinery = computed(() => {
+  if (!searchQuery.value) return machinery.value
+  const q = searchQuery.value.toLowerCase()
+  return machinery.value.filter(m => 
+    m.equipment_name.toLowerCase().includes(q) || 
+    m.serial_number.toLowerCase().includes(q) ||
+    m.equipment_type.toLowerCase().includes(q)
+  )
+})
+
 const fetchMachinery = async () => {
   isLoading.value = true
   try {
@@ -486,6 +501,15 @@ const fetchAssets = async () => {
   } catch (error) {
     console.error('Error fetching assets:', error)
   }
+}
+
+const formatDateOnly = (dateString) => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
 
 const autoCreateWorkOrder = async (mac) => {
