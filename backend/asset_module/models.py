@@ -127,6 +127,28 @@ class WorkOrder(models.Model):
     def __str__(self):
         return f"{self.wo_id} - {self.status}"
 
+    def save(self, *args, **kwargs):
+        if not self.wo_id:
+            import datetime
+            today = datetime.date.today()
+            date_str = today.strftime('%d%m%Y')
+            prefix = f'WO-{date_str}-'
+            
+            # Find the last sequence for today
+            last_wo = WorkOrder.objects.filter(wo_id__startswith=prefix).order_by('-wo_id').first()
+            if last_wo:
+                try:
+                    last_seq = int(last_wo.wo_id.split('-')[-1])
+                    new_seq = last_seq + 1
+                except ValueError:
+                    new_seq = 1
+            else:
+                new_seq = 1
+                
+            self.wo_id = f'{prefix}{new_seq:03d}'
+            
+        super().save(*args, **kwargs)
+
 
 # ==========================================
 # WORK ORDER MATERIAL MODEL

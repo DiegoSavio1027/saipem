@@ -499,10 +499,7 @@ const confirmCreateWorkOrder = async () => {
   const mac = pendingWoMac.value
 
   try {
-    const timestamp = Date.now().toString().slice(-4)
-    const wo_id = `WO-MAC-${mac.id}-${timestamp}`
     const payload = {
-      wo_id: wo_id,
       vessel: mac.vessel,
       machinery: mac.id,
       asset: mac.asset || null,  // Inherit parent asset so deck locations are available for PTW

@@ -126,6 +126,7 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
 # WORK ORDER SERIALIZER
 # ==========================================
 class WorkOrderSerializer(serializers.ModelSerializer):
+    wo_id = serializers.CharField(read_only=True)
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
     asset_name = serializers.CharField(source='asset.name', read_only=True, allow_null=True)
     machinery_name = serializers.CharField(source='machinery.equipment_name', read_only=True, allow_null=True)
