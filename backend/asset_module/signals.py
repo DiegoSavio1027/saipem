@@ -7,8 +7,8 @@ def reserve_spare_part_stock(sender, instance, created, **kwargs):
     """
     Auto-reserve spare part stock when a WorkOrderMaterial is added.
     """
-    if created:
-        spare_part = instance.spare_part
+    if created and instance.inventory_item:
+        spare_part = instance.inventory_item
         spare_part.quantity_reserved += instance.quantity_used
         spare_part.save()
 
@@ -17,7 +17,8 @@ def release_spare_part_stock(sender, instance, **kwargs):
     """
     Auto-release reserved spare part stock if a WorkOrderMaterial is deleted/removed from WO.
     """
-    spare_part = instance.spare_part
-    # Prevent negative reserved quantity just in case
-    spare_part.quantity_reserved = max(0, spare_part.quantity_reserved - instance.quantity_used)
-    spare_part.save()
+    if instance.inventory_item:
+        spare_part = instance.inventory_item
+        # Prevent negative reserved quantity just in case
+        spare_part.quantity_reserved = max(0, spare_part.quantity_reserved - instance.quantity_used)
+        spare_part.save()

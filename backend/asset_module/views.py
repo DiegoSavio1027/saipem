@@ -312,10 +312,6 @@ def workorder_add_material(request, wo_id):
         quantity_used=quantity
     )
     
-    # Reserve the stock immediately
-    inventory_item.quantity_reserved += quantity
-    inventory_item.save()
-    
     serializer = WorkOrderSerializer(workorder)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
