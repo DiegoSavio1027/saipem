@@ -285,10 +285,32 @@
         <h3 class="text-lg font-bold text-slate-900 dark:text-white uppercase mb-4">Issue Work Order</h3>
         <p class="text-xs text-slate-500 mb-4">Assign this critical maintenance task to a lead worker.</p>
         <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1 text-xs">Assign To (Lead Worker) *</label>
-        <select v-model="selectedAssignee" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)] mb-6" required :disabled="isFetchingEmployees">
+        <select v-model="selectedAssignee" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)] mb-4" required :disabled="isFetchingEmployees">
            <option value="" disabled>{{ isFetchingEmployees ? 'Loading...' : 'Select Assignee' }}</option>
            <option v-for="emp in assignableWorkers" :key="emp.emp_id" :value="emp.emp_id">{{ emp.full_name }} ({{ emp.job_role }})</option>
         </select>
+
+        <!-- Materials Section -->
+        <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1 text-xs">Materials (Optional)</label>
+        <div class="mb-4 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+          <div class="flex gap-2 mb-3">
+            <select v-model="newMaterialForm.spare_part_id" class="flex-1 px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-900 dark:text-slate-100">
+              <option value="" disabled>Select Item</option>
+              <option v-for="item in inventoryItems" :key="item.item_code" :value="item.item_code" :disabled="item.available_stock <= 0">
+                {{ item.item_name }} (Stock: {{ item.available_stock }})
+              </option>
+            </select>
+            <input v-model.number="newMaterialForm.quantity_used" type="number" min="1" class="w-16 px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-900 dark:text-slate-100" />
+            <button @click="addMaterial" :disabled="!newMaterialForm.spare_part_id" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold disabled:opacity-50">Add</button>
+          </div>
+          <div v-if="woMaterials.length > 0" class="space-y-2">
+            <div v-for="(mat, idx) in woMaterials" :key="idx" class="flex justify-between items-center text-xs bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800">
+              <span class="text-slate-700 dark:text-slate-300">{{ inventoryItems.find(i => i.item_code === mat.inventory_item)?.item_name }} (x{{ mat.quantity_used }})</span>
+              <button @click="woMaterials.splice(idx, 1)" class="text-red-500 hover:text-red-700"><X class="w-4 h-4"/></button>
+            </div>
+          </div>
+        </div>
+
         <div class="flex justify-end gap-3">
           <button @click="showIssueWoModal = false" class="px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
           <button @click="confirmCreateWorkOrder" class="px-4 py-2 bg-[var(--color-saipem-tertiary)] hover:bg-orange-600 text-white rounded-lg font-bold text-xs" :disabled="!selectedAssignee">Create Work Order</button>
@@ -325,12 +347,16 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { 
+  Plus, Edit, Trash2, ShieldAlert, Cpu, Droplets, Gauge, 
+  Activity, Thermometer, PenTool, CheckCircle, X, Search 
+} from 'lucide-vue-next'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Cpu, CheckCircle, AlertTriangle, RefreshCw, Gauge, Thermometer, Plus, Edit, Trash2, Activity, X } from '@lucide/vue'
 import { authState, getAccessToken } from '@/store/auth'
 import { toast } from 'vue-sonner'
 import { Line } from 'vue-chartjs'
@@ -350,7 +376,15 @@ const showIssueWoModal = ref(false)
 const selectedAssignee = ref('')
 const pendingWoMac = ref(null)
 const vesselEmployees = ref([])
+const assignableWorkers = computed(() => {
+  return vesselEmployees.value.filter(emp => !['Chief Engineer', 'Safety Officer'].includes(emp.job_role))
+})
 const isFetchingEmployees = ref(false)
+
+// Inventory for WO Materials
+const inventoryItems = ref([])
+const woMaterials = ref([])
+const newMaterialForm = ref({ spare_part_id: '', quantity_used: 1 })
 
 const isEditMode = ref(false)
 const editingMacId = ref(null)
@@ -398,10 +432,6 @@ const chartOptions = {
   }
 }
 
-const assignableWorkers = computed(() => {
-  return vesselEmployees.value.filter(emp => !['Chief Engineer', 'Safety Officer'].includes(emp.job_role))
-})
-
 const formData = ref({
   asset: '',
   equipment_name: '',
@@ -412,9 +442,6 @@ const formData = ref({
   maintenance_interval_hours: 1000,
   last_maintenance_date: ''
 })
-
-const healthyCount = computed(() => machinery.value.filter(m => !m.needs_maintenance).length)
-const needsMaintCount = computed(() => machinery.value.filter(m => m.needs_maintenance).length)
 
 const fetchMachinery = async () => {
   isLoading.value = true
@@ -462,27 +489,23 @@ const fetchAssets = async () => {
   }
 }
 
-// Unused fetchEmployees removed in favor of dynamic fetch
-
-const formatDateOnly = (dateString) => {
-  if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
 const autoCreateWorkOrder = async (mac) => {
   pendingWoMac.value = mac
   selectedAssignee.value = ''
+  woMaterials.value = []
+  newMaterialForm.value = { spare_part_id: '', quantity_used: 1 }
   showIssueWoModal.value = true
   isFetchingEmployees.value = true
-  vesselEmployees.value = []
   
+  await Promise.all([
+    fetchVesselEmployees(mac.vessel),
+    fetchInventoryForModal(mac.vessel)
+  ])
+}
+
+const fetchVesselEmployees = async (vesselId) => {
   try {
-    const vesselId = mac.vessel_id || mac.vessel
-    const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+    const headers = { 'Authorization': `Bearer ${getAccessToken()}` }
     const response = await fetch(`${API_BASE_URL}/hse/employees/?vessel_id=${vesselId}`, { headers })
     if (response.ok) {
       vesselEmployees.value = await response.json()
@@ -492,6 +515,39 @@ const autoCreateWorkOrder = async (mac) => {
   } finally {
     isFetchingEmployees.value = false
   }
+}
+
+const fetchInventoryForModal = async (vesselId) => {
+  try {
+    const params = new URLSearchParams()
+    if (vesselId) params.append('vessel', vesselId)
+    const response = await fetch(`${API_BASE_URL}/asset/inventory/?${params.toString()}`, {
+      headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+    })
+    if (response.ok) {
+      inventoryItems.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Error fetching inventory:', error)
+  }
+}
+
+const addMaterial = () => {
+  if (!newMaterialForm.value.spare_part_id) return
+  const item = inventoryItems.value.find(i => i.item_code === newMaterialForm.value.spare_part_id)
+  if (!item) return
+  
+  if (newMaterialForm.value.quantity_used > item.available_stock) {
+    toast.error('Insufficient Stock', { description: `Only ${item.available_stock} available.` })
+    return
+  }
+
+  woMaterials.value.push({
+    inventory_item: item.item_code,
+    quantity_used: newMaterialForm.value.quantity_used
+  })
+  
+  newMaterialForm.value = { spare_part_id: '', quantity_used: 1 }
 }
 
 const confirmCreateWorkOrder = async () => {
@@ -521,13 +577,33 @@ const confirmCreateWorkOrder = async () => {
     })
 
     if (response.ok) {
-      toast.success("Work Order Created", { description: `Automatically created ${wo_id} for ${mac.equipment_name} and assigned.` })
+      const savedWo = await response.json()
+      
+      // Add materials if any
+      if (woMaterials.value.length > 0) {
+        for (const mat of woMaterials.value) {
+          await fetch(`${API_BASE_URL}/asset/workorders/${savedWo.wo_id}/add_material/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${getAccessToken()}`
+            },
+            body: JSON.stringify({
+              spare_part_id: mat.inventory_item,
+              quantity_used: mat.quantity_used
+            })
+          })
+        }
+      }
+
+      toast.success("Work Order Created", { description: `Automatically created ${savedWo.wo_id} for ${mac.equipment_name} and assigned.` })
       showIssueWoModal.value = false
       router.push('/assets/work-orders')
     } else {
       const errorData = await response.json()
       console.error("Auto WO creation failed:", errorData)
-      toast.error("Failed", { description: "Failed to automatically create Work Order." })
+      const msg = Object.values(errorData).flat()[0] || "Failed to automatically create Work Order."
+      toast.error("Failed", { description: msg })
     }
   } catch (error) {
     console.error("Error creating WO:", error)
