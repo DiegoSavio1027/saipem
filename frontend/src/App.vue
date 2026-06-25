@@ -3,19 +3,34 @@
       <div v-if="authState.isAuthChecking" class="min-h-screen flex items-center justify-center bg-background">
           <p class="text-[18px] text-muted-foreground animate-pulse font-sans font-semibold">Memeriksa sesi...</p>
       </div>
+      
+      <LockScreen v-else-if="shouldLockScreen" />
+      
       <router-view v-else />
       <Toaster richColors position="top-right" :closeButton="true" :duration="2500" :theme="themeState.isDark ? 'dark' : 'light'" />
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { authState } from '@/store/auth';
 import { initializeWebSocket } from '@/store/websocket';
 import { initializeAudio } from '@/utils/notifications';
 import { themeState } from '@/store/theme';
 import { Toaster } from '@/components/ui/sonner';
+import LockScreen from '@/components/layout/LockScreen.vue';
 import 'vue-sonner/style.css';
+
+const shouldLockScreen = computed(() => {
+    // Only applies if user is logged in and auth check is done
+    if (!authState.isLoggedIn || authState.isAuthChecking) return false;
+    
+    // Admins and HR Staff do not need to be assigned to a vessel
+    if (['Admin', 'HR Staff'].includes(authState.userRole)) return false;
+    
+    // For field workers (Chief Engineer, Safety Officer, Worker), lock if no assigned vessel
+    return !authState.assignedVessel;
+});
 
 onMounted(() => {
     // Initialize WebSocket globally when app starts
