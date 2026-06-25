@@ -122,35 +122,47 @@ def dev_quick_login_accounts(request):
             "role": "Admin",
             "description": "Administrator account"
         },
-        "chief_engineer": {
-            "username": os.getenv('DEV_CHIEF_ENGINEER_USERNAME', 'chief_engineer'),
-            "password": os.getenv('DEV_CHIEF_ENGINEER_PASSWORD', 'chief123'),
+        "chief_engineer_onboard": {
+            "username": "chief_engineer_s7000",
+            "password": "chief123",
             "role": "Chief Engineer",
-            "description": "Chief Engineer (On Roster: Saipem 7000)"
+            "description": "Chief Engineer (ONBOARD: Saipem 7000)"
+        },
+        "chief_engineer_available": {
+            "username": "chief_engineer_hq",
+            "password": "chief123",
+            "role": "Chief Engineer",
+            "description": "Chief Engineer (AVAILABLE: HQ)"
+        },
+        "safety_officer_onboard": {
+            "username": "safety_officer_s7000",
+            "password": "safety123",
+            "role": "Safety Officer",
+            "description": "Safety Officer (ONBOARD: Saipem 7000)"
+        },
+        "safety_officer_available": {
+            "username": "safety_officer_hq",
+            "password": "safety123",
+            "role": "Safety Officer",
+            "description": "Safety Officer (AVAILABLE: HQ)"
         },
         "worker_onboard": {
-            "username": os.getenv('DEV_WORKER_USERNAME', 'worker'),
-            "password": os.getenv('DEV_WORKER_PASSWORD', 'worker123'),
+            "username": "worker",
+            "password": "worker123",
             "role": "Worker",
-            "description": "Worker (On Roster: Saipem 7000)"
+            "description": "Worker (ONBOARD: Saipem 7000)"
         },
-        "worker_off_roster": {
-            "username": 'EMP-007',
-            "password": 'saipem123',
+        "worker_available": {
+            "username": "EMP-007",
+            "password": "saipem123",
             "role": "Worker",
-            "description": "Worker (Off Roster / Available)"
+            "description": "Scaffolder (AVAILABLE)"
         },
-        "safety_officer": {
-            "username": os.getenv('DEV_SAFETY_OFFICER_USERNAME', 'safety_officer'),
-            "password": os.getenv('DEV_SAFETY_OFFICER_PASSWORD', 'safety123'),
-            "role": "Safety Officer",
-            "description": "Safety Officer (On Roster: Saipem 7000)"
-        },
-        "hr_staff": {
-            "username": os.getenv('DEV_HR_STAFF_USERNAME', 'hr_staff'),
-            "password": os.getenv('DEV_HR_STAFF_PASSWORD', 'hr123'),
+        "hr_staff_available": {
+            "username": "hr_staff",
+            "password": "hr123",
             "role": "HR Staff",
-            "description": "HR Staff - HR Manager"
+            "description": "HR Staff (AVAILABLE: HQ)"
         }
     }
 

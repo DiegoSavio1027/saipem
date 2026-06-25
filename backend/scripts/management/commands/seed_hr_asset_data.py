@@ -612,21 +612,22 @@ class Command(BaseCommand):
         for item_data in inventory_data:
             try:
                 asset_location = assets[item_data['asset_id']]
-                item, created = InventoryItem.objects.get_or_create(
+                item, created = InventoryItem.objects.update_or_create(
                     item_code=item_data['item_code'],
                     defaults={
                         'item_name': item_data['item_name'],
                         'category': item_data['category'],
                         'current_stock': item_data['current_stock'],
                         'minimum_stock': item_data['minimum_stock'],
-                        'asset_location': asset_location
+                        'asset_location': asset_location,
+                        'vessel': asset_location.vessel
                     }
                 )
                 if created:
                     status = "AMAN" if item.current_stock > item.minimum_stock else "KRITIS"
                     self.stdout.write(f"✓ Created inventory: {item.item_code} ({item.current_stock} units) - {status}")
                 else:
-                    self.stdout.write(f"- Inventory already exists: {item.item_code}")
+                    self.stdout.write(f"✓ Updated inventory: {item.item_code}")
             except KeyError:
                 self.stdout.write(self.style.WARNING(f"⚠ Asset {item_data['asset_id']} not found for inventory {item_data['item_code']}"))
 
