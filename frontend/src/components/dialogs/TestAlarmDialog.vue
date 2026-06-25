@@ -129,7 +129,7 @@ import { ref, onMounted } from 'vue';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { authState } from '@/store/auth';
+import { authState, getAccessToken } from '@/store/auth';
 
 const props = defineProps({
   open: Boolean
@@ -152,6 +152,9 @@ const fetchLocations = async () => {
         url += `?vessel_id=${authState.assignedVessel.asset_id}`;
     }
     const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
       credentials: 'include'
     });
     if (response.ok) {
@@ -165,6 +168,9 @@ const fetchLocations = async () => {
 const fetchVessels = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/offshore/vessels/`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
       credentials: 'include'
     });
     if (response.ok) {

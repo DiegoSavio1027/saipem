@@ -41,7 +41,7 @@ class IncidentConsumer(AsyncWebsocketConsumer):
         incidents = Incident.objects.all().order_by('-created_at')[:5]
         result = []
         for incident in incidents:
-            location_name = incident.location.name if incident.location else "Unknown"
+            location_name = incident.location.deck_name if incident.location else "Unknown"
 
             result.append({
                 'incident_id': incident.incident_id,

@@ -83,7 +83,7 @@ class Incident(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.get_severity_display()} - {self.location.name} ({self.incident_date.strftime('%Y-%m-%d')})"
+        return f"{self.get_severity_display()} - {self.location.deck_name} ({self.incident_date.strftime('%Y-%m-%d')})"
 
     def save(self, *args, **kwargs):
         if not self.incident_id:

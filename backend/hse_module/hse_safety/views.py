@@ -85,7 +85,7 @@ class IncidentViewSet(viewsets.ModelViewSet):
 
         # Broadcast incident created event
         from ..hse_pob.models import WorkLocation
-        location_name = incident.location.name if incident.location else "Unknown"
+        location_name = incident.location.deck_name if incident.location else "Unknown"
 
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
@@ -175,7 +175,7 @@ class IncidentViewSet(viewsets.ModelViewSet):
         # Broadcast incident status changed if status changed
         if old_status != instance.status:
             from ..hse_pob.models import WorkLocation
-            location_name = instance.location.name if instance.location else "Unknown"
+            location_name = instance.location.deck_name if instance.location else "Unknown"
 
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(

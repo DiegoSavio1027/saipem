@@ -53,11 +53,11 @@ def test_trigger(request):
 
     # Filter by location if not ALL
     if target_location != 'ALL':
-        active_ptws = active_ptws.filter(deck_location=target_location)
+        active_ptws = active_ptws.filter(deck_location__deck_name=target_location)
 
     # Filter by vessel if not ALL
     if target_vessel != 'ALL':
-        active_ptws = active_ptws.filter(vessel__asset_id=target_vessel)
+        active_ptws = active_ptws.filter(vessel_id=target_vessel)
 
     # 3. Broadcast emergency alert via WebSocket
     channel_layer = get_channel_layer()
@@ -79,7 +79,7 @@ def test_trigger(request):
                         "permit_id": ptw.permit_id,
                         "emp_id": ptw.emp_id if isinstance(ptw.emp_id, str) else ptw.emp_id.emp_id,
                         "employee_name": ptw.emp_id.full_name if hasattr(ptw.emp_id, 'full_name') else str(ptw.emp_id),
-                        "location": ptw.deck_location,
+                        "location": ptw.deck_location.deck_name if ptw.deck_location else "Unknown",
                         "status": ptw.status
                     }
                     for ptw in active_ptws

@@ -90,7 +90,7 @@ import { useRouter } from 'vue-router';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { authState, logout, setSelectedVessel } from '@/store/auth';
+import { authState, logout, setSelectedVessel, getAccessToken } from '@/store/auth';
 import { vessels, fetchVessels } from '@/store/vessel';
 import { themeState, toggleTheme } from '@/store/theme';
 import { getCsrfToken } from '@/utils/csrf';
@@ -132,6 +132,9 @@ const handleTestAlarmActivate = async (params) => {
 
         const response = await fetch(`${API_BASE_URL}/hse/test-trigger/?${queryParams}`, {
             method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${getAccessToken()}`
+            },
             credentials: 'include'
         });
 
@@ -162,7 +165,8 @@ const handleLogout = async () => {
         const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCsrfToken() || ''
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
             },
             credentials: 'include'
         });

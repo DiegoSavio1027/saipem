@@ -78,19 +78,19 @@
                 <div class="grid grid-cols-2 gap-2">
                     <div
                         v-for="location in locations"
-                        :key="location.name"
+                        :key="location.deck_name"
                         class="p-3 rounded border-2 transition-all hover:shadow-sm cursor-pointer flex items-center gap-3 relative"
-                        @click="selectLocation(location.name)"
-                        :class="selectedLocation === location.name ? 'border-[var(--color-saipem-tertiary)] bg-[var(--color-saipem-tertiary)]/5' : location.count > 0 ? 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'"
+                        @click="selectLocation(location.deck_name)"
+                        :class="selectedLocation === location.deck_name ? 'border-[var(--color-saipem-tertiary)] bg-[var(--color-saipem-tertiary)]/5' : location.count > 0 ? 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'"
                     >
                         <!-- Icon Left -->
                         <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0" :class="location.count > 0 ? 'bg-[var(--color-saipem-tertiary)]/10 text-[var(--color-saipem-tertiary)]' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'">
-                            <component :is="getLocationIcon(location.name)" class="w-5 h-5" />
+                            <component :is="getLocationIcon(location.deck_name)" class="w-5 h-5" />
                         </div>
 
                         <!-- Content Right -->
                         <div class="flex-1 min-w-0">
-                            <h3 class="font-semibold text-slate-900 dark:text-slate-100 text-[11px] leading-tight">{{ location.name }}</h3>
+                            <h3 class="font-semibold text-slate-900 dark:text-slate-100 text-[11px] leading-tight">{{ location.deck_name }}</h3>
                             <div class="flex items-center gap-1 mt-0.5">
                                 <span class="text-sm font-bold" :class="location.count > 0 ? 'text-[var(--color-saipem-tertiary)]' : 'text-slate-400 dark:text-slate-500'">
                                     {{ location.count }}
