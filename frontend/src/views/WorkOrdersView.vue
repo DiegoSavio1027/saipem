@@ -201,7 +201,7 @@
           </div>
 
           <!-- Materials Section -->
-          <div v-if="isEditMode" class="mt-8 border-t border-slate-200 dark:border-slate-800 pt-6">
+          <div class="mt-8 border-t border-slate-200 dark:border-slate-800 pt-6">
             <h4 class="text-sm font-bold text-slate-900 dark:text-white uppercase mb-4 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--color-saipem-tertiary)]"><path d="M21.73 18l-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               Materials Used
@@ -448,6 +448,35 @@ const openEditModal = (wo) => {
 
 const addMaterialToWo = async () => {
   if (!materialForm.value.spare_part_id) return
+  
+  if (!isEditMode.value) {
+    // Local addition for new WO
+    const sp = allInventoryItems.value.find(i => i.item_code === materialForm.value.spare_part_id);
+    if (!sp) return;
+    
+    const qty = materialForm.value.quantity_used;
+    if (qty > sp.available_stock) {
+        toast.error(`Insufficient stock. Only ${sp.available_stock} available.`);
+        return;
+    }
+    
+    // Deduct locally for UI purposes (so they can't add more than available)
+    sp.available_stock -= qty;
+    
+    woForm.value.materials.push({
+      id: 'local-' + Date.now(),
+      inventory_item: sp.item_code,
+      part_name: sp.item_name,
+      part_number: sp.item_code,
+      quantity_used: qty,
+      added_at: new Date().toISOString()
+    });
+    
+    toast.success('Material added locally. Will be saved with Work Order.');
+    materialForm.value = { spare_part_id: '', quantity_used: 1 }
+    return;
+  }
+
   isAddingMaterial.value = true
   try {
     const response = await fetch(`${API_BASE_URL}/asset/workorders/${woForm.value.wo_id}/add_material/`, {
@@ -506,9 +535,30 @@ const submitWo = async () => {
     })
     
     if (response.ok) {
+      const savedWo = await response.json()
+      
+      if (!isEditMode.value && woForm.value.materials.length > 0) {
+          // Add local materials to the newly created WO
+          for (const mat of woForm.value.materials) {
+              await fetch(`${API_BASE_URL}/asset/workorders/${savedWo.wo_id}/add_material/`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                  },
+                  body: JSON.stringify({
+                      spare_part_id: mat.inventory_item,
+                      quantity_used: mat.quantity_used
+                  })
+              });
+          }
+      }
+
       toast.success(isEditMode.value ? 'Work Order Updated Successfully' : 'Work Order Created Successfully')
       showWoModal.value = false
       fetchWorkOrders()
+      // Refresh inventory
+      fetchAssetsAndMachinery()
     } else {
       const err = await response.json()
       const msg = Object.values(err).flat()[0] || `Failed to ${isEditMode.value ? 'update' : 'create'} Work Order.`
