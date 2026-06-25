@@ -80,11 +80,16 @@
             </div>
           </div>
           <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-0.5 uppercase tracking-tight">{{ asset.name }}</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-mono">
-            {{ asset.vessel_name || asset.vessel }} • {{ asset.capacity }} • {{ asset.machinery_count || 0 }} Machines
-            <span v-if="asset.assigned_decks_details && asset.assigned_decks_details.length > 0">
-              • {{ asset.assigned_decks_details.map(d => d.deck_name).join(', ') }}
-            </span>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-mono flex items-center gap-2 flex-wrap">
+            <span>{{ asset.vessel_name || asset.vessel }}</span>
+            <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+            <span>{{ asset.capacity }}</span>
+            <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+            <span class="text-blue-500 font-bold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">{{ asset.machinery_count || 0 }} Machines</span>
+            <template v-if="asset.assigned_decks_details && asset.assigned_decks_details.length > 0">
+              <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+              <span>{{ asset.assigned_decks_details.map(d => d.deck_name).join(', ') }}</span>
+            </template>
           </p>
 
           <!-- Health Score Progress Bar -->

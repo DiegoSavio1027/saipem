@@ -655,7 +655,8 @@ class Command(BaseCommand):
                 'installation_date': date(2022, 1, 15),
                 'operating_hours': 850,
                 'maintenance_interval_hours': 1000,
-                'last_maintenance_date': date(2025, 12, 1)
+                'last_maintenance_date': date(2025, 12, 1),
+                'asset_id': 'AST-001'
             },
             {
                 'vessel_name': 'Saipem 7000',
@@ -665,7 +666,8 @@ class Command(BaseCommand):
                 'installation_date': date(2022, 1, 15),
                 'operating_hours': 1050,  # OVERDUE! needs_maintenance = True
                 'maintenance_interval_hours': 1000,
-                'last_maintenance_date': date(2025, 11, 15)
+                'last_maintenance_date': date(2025, 11, 15),
+                'asset_id': 'AST-005'
             },
             {
                 'vessel_name': 'Saipem 7000',
@@ -675,7 +677,8 @@ class Command(BaseCommand):
                 'installation_date': date(2023, 4, 10),
                 'operating_hours': 450,
                 'maintenance_interval_hours': 1200,
-                'last_maintenance_date': date(2026, 1, 10)
+                'last_maintenance_date': date(2026, 1, 10),
+                'asset_id': 'AST-005'
             },
             {
                 'vessel_name': 'Saipem 7000',
@@ -685,7 +688,8 @@ class Command(BaseCommand):
                 'installation_date': date(2023, 6, 20),
                 'operating_hours': 1220,  # OVERDUE! needs_maintenance = True
                 'maintenance_interval_hours': 1200,
-                'last_maintenance_date': date(2025, 12, 20)
+                'last_maintenance_date': date(2025, 12, 20),
+                'asset_id': 'AST-006'
             },
             {
                 'vessel_name': 'Castorone',
@@ -695,7 +699,8 @@ class Command(BaseCommand):
                 'installation_date': date(2021, 9, 5),
                 'operating_hours': 920,
                 'maintenance_interval_hours': 1000,
-                'last_maintenance_date': date(2025, 10, 1)
+                'last_maintenance_date': date(2025, 10, 1),
+                'asset_id': 'AST-008'
             },
             {
                 'vessel_name': 'Castorone',
@@ -705,7 +710,8 @@ class Command(BaseCommand):
                 'installation_date': date(2022, 3, 12),
                 'operating_hours': 1580,  # OVERDUE! needs_maintenance = True
                 'maintenance_interval_hours': 1500,
-                'last_maintenance_date': date(2025, 9, 12)
+                'last_maintenance_date': date(2025, 9, 12),
+                'asset_id': 'AST-007'
             },
             {
                 'vessel_name': 'Scarabeo 8',
@@ -715,7 +721,8 @@ class Command(BaseCommand):
                 'installation_date': date(2024, 2, 1),
                 'operating_hours': 200,
                 'maintenance_interval_hours': 1000,
-                'last_maintenance_date': date(2026, 2, 1)
+                'last_maintenance_date': date(2026, 2, 1),
+                'asset_id': 'AST-003'
             },
             {
                 'vessel_name': 'Scarabeo 8',
@@ -725,17 +732,20 @@ class Command(BaseCommand):
                 'installation_date': date(2023, 8, 14),
                 'operating_hours': 490,
                 'maintenance_interval_hours': 500,
-                'last_maintenance_date': date(2026, 1, 14)
+                'last_maintenance_date': date(2026, 1, 14),
+                'asset_id': 'AST-009'
             }
         ]
 
         for mac_data in machinery_data:
             try:
                 vessel = vessels[mac_data['vessel_name']]
+                asset = assets.get(mac_data.get('asset_id'))
                 mac, created = MachineryEquipment.objects.update_or_create(
                     serial_number=mac_data['serial_number'],
                     defaults={
                         'vessel': vessel,
+                        'asset': asset,
                         'equipment_name': mac_data['equipment_name'],
                         'equipment_type': mac_data['equipment_type'],
                         'installation_date': mac_data['installation_date'],

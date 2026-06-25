@@ -93,6 +93,14 @@
           </CardHeader>
           
           <CardContent class="space-y-4">
+            <!-- Equipment Snapshot -->
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800/60">
+              <div><span class="text-slate-500">Parent Asset:</span> <span class="font-bold text-slate-700 dark:text-slate-300">{{ mac.asset_name || 'Unassigned' }}</span></div>
+              <div><span class="text-slate-500">Serial No:</span> <span class="font-bold text-slate-700 dark:text-slate-300">{{ mac.serial_number }}</span></div>
+              <div><span class="text-slate-500">Installed:</span> <span class="font-bold text-slate-700 dark:text-slate-300">{{ formatDateOnly(mac.installation_date) }}</span></div>
+              <div><span class="text-slate-500">Rem. Life:</span> <span class="font-bold text-slate-700 dark:text-slate-300">~{{ mac.rul_hours }} hrs</span></div>
+            </div>
+
             <!-- Health Score Progress Bar -->
             <div class="space-y-1.5">
               <div class="flex justify-between items-center text-xs font-mono">
@@ -142,17 +150,9 @@
             </div>
 
             <!-- Action Button Footer -->
-            <div class="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800">
-              <div class="flex flex-col mb-4 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg">
-                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Equipment Snapshot</span>
-                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
-                  <div><span class="text-slate-500">Parent:</span> <span class="font-bold text-slate-700 dark:text-slate-300">{{ mac.asset_name || 'Unassigned' }}</span></div>
-                  <div><span class="text-slate-500">S/N:</span> <span class="font-bold text-slate-700 dark:text-slate-300">{{ mac.serial_number }}</span></div>
-                  <div><span class="text-slate-500">Install:</span> <span class="font-bold text-slate-700 dark:text-slate-300">{{ formatDateOnly(mac.installation_date) }}</span></div>
-                </div>
-              </div>
+            <div class="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800/60">
               <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">
-                {{ mac.needs_maintenance ? '⚠️ Maintenance Overdue' : `RUL: ~${mac.rul_hours} hours left` }}
+                {{ mac.needs_maintenance ? '[OVERDUE] Maintenance Required' : `STATUS: OPERATIONAL` }}
               </span>
               <Button @click="handleActionClick(mac)" :variant="mac.needs_maintenance ? 'destructive' : 'secondary'" size="sm" class="font-bold uppercase tracking-wider text-xs">
                 {{ mac.needs_maintenance ? 'Issue Work Order' : 'Schedule Check' }}
@@ -704,5 +704,6 @@ const closeTelemetryModal = () => {
 
 onMounted(() => {
   fetchMachinery()
+  fetchAssets()
 })
 </script>
