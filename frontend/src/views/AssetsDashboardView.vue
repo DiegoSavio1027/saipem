@@ -97,13 +97,13 @@
         <!-- Critical Assets List -->
         <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader>
-            <CardTitle class="text-lg font-black text-slate-900 dark:text-white tracking-tight">Critical Assets</CardTitle>
-            <CardDescription class="text-xs text-slate-500 dark:text-slate-400">Asset systems with warning or critical health score</CardDescription>
+            <CardTitle class="text-lg font-black text-slate-900 dark:text-white tracking-tight">Critical Equipment & Systems</CardTitle>
+            <CardDescription class="text-xs text-slate-500 dark:text-slate-400">Assets and machinery with warning or critical health score</CardDescription>
           </CardHeader>
           <CardContent>
             <div v-if="criticalAssets.length === 0" class="flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-slate-500">
               <CheckCircle class="w-10 h-10 text-green-500 mb-2 opacity-50" />
-              <p class="text-xs font-mono">All asset systems are in normal condition</p>
+              <p class="text-xs font-mono">All equipment and systems are in normal condition</p>
             </div>
             <ul v-else class="space-y-3 max-h-[300px] overflow-y-auto">
               <li v-for="asset in criticalAssets" :key="asset.asset_id" class="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 rounded-lg text-xs font-mono">
@@ -298,7 +298,19 @@ const lowStockInventoryCount = computed(() => {
 });
 
 const criticalAssets = computed(() => {
-  return assets.value.filter(a => a.status === 'CRITICAL' || a.status === 'MAINTENANCE' || a.health_score < 80);
+  const criticalFromAssets = assets.value.filter(a => a.status === 'CRITICAL' || a.status === 'MAINTENANCE' || a.health_score < 80);
+  
+  const criticalFromMachinery = machinery.value.filter(m => m.needs_maintenance || m.health_percentage < 80).map(m => ({
+    asset_id: m.serial_number,
+    name: m.equipment_name,
+    vessel_name: m.vessel_name,
+    status: m.needs_maintenance ? 'MAINTENANCE' : 'WARNING',
+    health_score: Math.round(m.health_percentage || 50),
+    temperature: m.temperature,
+    vibration: m.vibration
+  }));
+
+  return [...criticalFromAssets, ...criticalFromMachinery];
 });
 
 onMounted(() => {

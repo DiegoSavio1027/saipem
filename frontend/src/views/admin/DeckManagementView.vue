@@ -101,7 +101,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getAccessToken } from '@/store/auth'
+import { authState, getAccessToken } from '@/store/auth'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { Plus, Loader, Trash2 } from '@lucide/vue'
 import {
@@ -138,7 +138,11 @@ const getRiskLevelClass = (riskLevel) => {
 const fetchDecks = async () => {
   loading.value = true
   try {
-    const response = await fetch(`${API_BASE_URL}/offshore/locations/`, {
+    let url = `${API_BASE_URL}/offshore/locations/`
+    if (authState.selectedVessel) {
+        url += `?vessel_id=${authState.selectedVessel.id}`
+    }
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${getAccessToken()}`
       }

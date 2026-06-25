@@ -38,12 +38,12 @@
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Critical Assets</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Critical Equipments</CardTitle>
             <AlertTriangle class="h-4 w-4 text-red-500" :class="[criticalCount > 0 ? 'animate-pulse' : '']" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ criticalCount }} Systems</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Require immediate maintenance</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Systems/Machinery requiring attention</p>
           </CardContent>
         </Card>
       </div>
