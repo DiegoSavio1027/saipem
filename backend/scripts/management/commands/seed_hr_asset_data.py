@@ -213,10 +213,22 @@ class Command(BaseCommand):
         # STEP 1.5: Certifications
         self.stdout.write("\n[1.5/8] Creating Certifications...")
         certifications_data = [
+            # General offshore survival certs
             {'cert_id': 'CERT-BOSIET-001', 'cert_type': 'BOSIET', 'employee': 'worker', 'expiry_date': '2027-01-01'},
             {'cert_id': 'CERT-HUET-001', 'cert_type': 'HUET', 'employee': 'worker', 'expiry_date': '2027-01-01'},
+            # PTW Work Type certs for worker (Aron Piper) - required to request any PTW type
+            {'cert_id': 'CERT-HW-001', 'cert_type': 'HOT_WORK', 'employee': 'worker', 'expiry_date': '2027-01-01'},
+            {'cert_id': 'CERT-CS-001', 'cert_type': 'CONFINED_SPACE', 'employee': 'worker', 'expiry_date': '2027-01-01'},
+            {'cert_id': 'CERT-WAH-001', 'cert_type': 'WORKING_AT_HEIGHT', 'employee': 'worker', 'expiry_date': '2027-01-01'},
+            {'cert_id': 'CERT-ISO-001', 'cert_type': 'ISOLATION', 'employee': 'worker', 'expiry_date': '2027-01-01'},
+            # EMP-005 (Skepta)
             {'cert_id': 'CERT-BOSIET-002', 'cert_type': 'BOSIET', 'employee': 'EMP-005', 'expiry_date': '2027-01-01'},
             {'cert_id': 'CERT-WELDING-001', 'cert_type': '6G Welding', 'employee': 'EMP-005', 'expiry_date': '2028-01-01'},
+            {'cert_id': 'CERT-HW-002', 'cert_type': 'HOT_WORK', 'employee': 'EMP-005', 'expiry_date': '2027-01-01'},
+            {'cert_id': 'CERT-CS-002', 'cert_type': 'CONFINED_SPACE', 'employee': 'EMP-005', 'expiry_date': '2027-01-01'},
+            {'cert_id': 'CERT-WAH-002', 'cert_type': 'WORKING_AT_HEIGHT', 'employee': 'EMP-005', 'expiry_date': '2027-01-01'},
+            {'cert_id': 'CERT-ISO-002', 'cert_type': 'ISOLATION', 'employee': 'EMP-005', 'expiry_date': '2027-01-01'},
+            # Chief Engineers & Safety Officers
             {'cert_id': 'CERT-BOSIET-003', 'cert_type': 'BOSIET', 'employee': 'chief_engineer_s7000', 'expiry_date': '2028-01-01'},
             {'cert_id': 'CERT-BOSIET-004', 'cert_type': 'BOSIET', 'employee': 'safety_officer_s7000', 'expiry_date': '2028-01-01'},
             {'cert_id': 'CERT-NEBOSH-001', 'cert_type': 'NEBOSH IGC', 'employee': 'safety_officer_s7000', 'expiry_date': '2030-01-01'},
