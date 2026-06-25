@@ -128,8 +128,8 @@
         
         <form @submit.prevent="submitWo" class="space-y-4">
           <div>
-            <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Work Order ID *</label>
-            <input v-model="woForm.wo_id" type="text" placeholder="e.g. WO-2026-001" required :disabled="isEditMode"
+            <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Work Order ID</label>
+            <input v-model="woForm.wo_id" type="text" :placeholder="isEditMode ? '' : 'Auto-generated'" disabled
               class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)] disabled:opacity-60 disabled:cursor-not-allowed">
           </div>
           <div>
