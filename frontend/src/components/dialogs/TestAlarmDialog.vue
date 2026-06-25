@@ -18,7 +18,7 @@
         <!-- Vessel Selector -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700">Target Vessel</label>
-          <Select v-model="selectedVessel">
+          <Select v-model="selectedVessel" :disabled="!!authState.assignedVessel">
             <SelectTrigger>
               <SelectValue placeholder="Select vessel" />
             </SelectTrigger>
@@ -59,13 +59,13 @@
                   <span class="font-semibold">All Locations</span>
                 </div>
               </SelectItem>
-              <SelectItem v-for="location in locations" :key="location.id" :value="location.name">
+              <SelectItem v-for="location in locations" :key="location.id" :value="location.deck_name">
                 <div class="flex items-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
                     <circle cx="12" cy="10" r="3"/>
                   </svg>
-                  <span>{{ location.name }}</span>
+                  <span>{{ location.deck_name }}</span>
                 </div>
               </SelectItem>
             </SelectContent>
@@ -129,6 +129,7 @@ import { ref, onMounted } from 'vue';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { authState } from '@/store/auth';
 
 const props = defineProps({
   open: Boolean
@@ -146,7 +147,11 @@ const vessels = ref([]);
 
 const fetchLocations = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/offshore/locations/`, {
+    let url = `${API_BASE_URL}/offshore/locations/`;
+    if (authState.assignedVessel) {
+        url += `?vessel_id=${authState.assignedVessel.asset_id}`;
+    }
+    const response = await fetch(url, {
       credentials: 'include'
     });
     if (response.ok) {
@@ -180,6 +185,9 @@ const handleActivate = () => {
 };
 
 onMounted(() => {
+  if (authState.assignedVessel) {
+    selectedVessel.value = authState.assignedVessel.asset_id;
+  }
   fetchLocations();
   fetchVessels();
 });

@@ -14,7 +14,7 @@
             {{ isConnected ? 'LIVE' : 'OFFLINE' }}
         </Badge>
 
-        <Button v-if="authState.userRole !== 'Worker'" @click="handleTestAlarm" class="h-10 px-3 md:px-5 rounded-md bg-[var(--color-saipem-tertiary)] hover:bg-[var(--color-saipem-tertiary)]/90 text-xs md:text-sm font-semibold text-white shadow-sm transition-colors flex items-center">
+        <Button v-if="authState.userRole === 'Safety Officer'" @click="handleTestAlarm" class="h-10 px-3 md:px-5 rounded-md bg-[var(--color-saipem-tertiary)] hover:bg-[var(--color-saipem-tertiary)]/90 text-xs md:text-sm font-semibold text-white shadow-sm transition-colors flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 md:mr-2 shrink-0">
               <path d="m3 11 18-5v12L3 14v-3z"/>
               <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>

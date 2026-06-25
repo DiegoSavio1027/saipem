@@ -150,7 +150,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ref, computed, h, onMounted } from 'vue';
-import { getAccessToken } from '@/store/auth';
+import { authState, getAccessToken } from '@/store/auth';
 
 const props = defineProps({
     totalPob: Number,
@@ -186,7 +186,12 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989
 // Fetch locations from API
 const fetchLocations = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/offshore/locations/`, {
+        let url = `${API_BASE_URL}/offshore/locations/`;
+        const vesselId = authState.assignedVessel?.asset_id || authState.assignedVessel?.id || authState.selectedVessel?.id;
+        if (vesselId) {
+            url += `?vessel_id=${vesselId}`;
+        }
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${getAccessToken()}`
             },
