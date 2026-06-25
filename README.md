@@ -439,7 +439,7 @@ python manage.py run_iot_simulator
 | Safety Officer | `safety_officer_s7000` | `safety123` | HSE Officer (Saipem 7000) |
 | Safety Officer | `safety_officer_castorone` | `safety123` | HSE Officer (Castorone) |
 | Worker | `worker` | `worker123` | Worker (Onboard) |
-| Worker | `worker_off` | `worker123` | Worker (Available) |
+| Worker | `EMP-007` | `saipem123` | Worker (Available) |
 
 ---
 

@@ -49,22 +49,12 @@ def login_view(request):
     # Generate tokens
     refresh = RefreshToken.for_user(user)
 
-    # Get user role and accessible modules from Django Groups
-    role, accessible_modules = get_user_role_and_modules(user)
+    serializer = UserSerializer(user)
 
     return Response({
         'access': str(refresh.access_token),
         'refresh': str(refresh),
-        'user': {
-            'id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'is_superuser': user.is_superuser,
-            'role': role,
-            'accessible_modules': accessible_modules
-        }
+        'user': serializer.data
     }, status=status.HTTP_200_OK)
 
 
