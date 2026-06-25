@@ -16,33 +16,33 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Monitored Assets</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Total Asset Systems</CardTitle>
             <Cpu class="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ assets.length }} Units</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">IoT signal active</p>
+            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ assets.length }} Systems</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Registered in fleet</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Healthy Status</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Operational Assets</CardTitle>
             <CheckCircle class="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ healthyCount }} Units</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Operational & stable</p>
+            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ healthyCount }} Systems</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Stable condition</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Critical Warnings</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Critical Assets</CardTitle>
             <AlertTriangle class="h-4 w-4 text-red-500" :class="[criticalCount > 0 ? 'animate-pulse' : '']" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ criticalCount }} Alerts</div>
+            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ criticalCount }} Systems</div>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Require immediate maintenance</p>
           </CardContent>
         </Card>

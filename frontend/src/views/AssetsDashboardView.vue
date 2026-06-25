@@ -22,33 +22,33 @@
       <!-- Stats Grid -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Monitored Assets -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" @click="router.push('/assets')">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Monitored Assets</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Total Asset Systems</CardTitle>
             <Cpu class="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div class="text-3xl font-black text-slate-900 dark:text-white">{{ assets.length }}</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">IoT signal active</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Registered in fleet</p>
           </CardContent>
         </Card>
 
         <!-- Healthy Status -->
         <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Healthy Assets</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Operational Assets</CardTitle>
             <CheckCircle class="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div class="text-3xl font-black text-slate-900 dark:text-white">{{ healthyCount }}</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Operational & stable</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Stable condition</p>
           </CardContent>
         </Card>
 
         <!-- Critical Warnings -->
         <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow" :class="criticalCount > 0 ? 'border-red-200 dark:border-red-950 bg-red-50/5' : ''">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Critical Warnings</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Critical Assets</CardTitle>
             <AlertTriangle class="h-4 w-4 text-red-500" :class="criticalCount > 0 ? 'animate-pulse' : ''" />
           </CardHeader>
           <CardContent>

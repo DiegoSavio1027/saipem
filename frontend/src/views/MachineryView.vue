@@ -21,7 +21,7 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Monitored Assets</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Monitored Machinery</CardTitle>
             <Cpu class="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
@@ -32,7 +32,7 @@
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Healthy Status</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Healthy Machinery</CardTitle>
             <CheckCircle class="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -43,7 +43,7 @@
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Critical Warnings</CardTitle>
+            <CardTitle class="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Critical Machinery</CardTitle>
             <AlertTriangle class="h-4 w-4 text-red-500" :class="[needsMaintCount > 0 ? 'animate-pulse' : '']" />
           </CardHeader>
           <CardContent>
