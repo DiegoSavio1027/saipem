@@ -170,7 +170,7 @@ class IncidentReportSerializer(serializers.Serializer):
         if vessel_id:
             from asset_module.models import Vessel
             try:
-                vessel = Vessel.objects.get(asset_id=vessel_id)
+                vessel = Vessel.objects.get(id=vessel_id)
                 validated_data['vessel'] = vessel
             except Vessel.DoesNotExist:
                 pass
