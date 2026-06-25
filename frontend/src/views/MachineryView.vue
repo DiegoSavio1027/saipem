@@ -142,7 +142,15 @@
             </div>
 
             <!-- Action Button Footer -->
-            <div class="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800/60">
+            <div class="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div class="flex flex-col mb-4 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Equipment Snapshot</span>
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                  <div><span class="text-slate-500">Parent:</span> <span class="font-bold text-slate-700 dark:text-slate-300">{{ mac.asset_name || 'Unassigned' }}</span></div>
+                  <div><span class="text-slate-500">S/N:</span> <span class="font-bold text-slate-700 dark:text-slate-300">{{ mac.serial_number }}</span></div>
+                  <div><span class="text-slate-500">Install:</span> <span class="font-bold text-slate-700 dark:text-slate-300">{{ formatDateOnly(mac.installation_date) }}</span></div>
+                </div>
+              </div>
               <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">
                 {{ mac.needs_maintenance ? '⚠️ Maintenance Overdue' : `RUL: ~${mac.rul_hours} hours left` }}
               </span>
@@ -174,6 +182,19 @@
                 class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)]"
                 required
               />
+            </div>
+
+            <div>
+              <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Parent Asset System (Optional)</label>
+              <select
+                v-model="formData.asset"
+                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)]"
+              >
+                <option value="">-- No Parent (Independent Machinery) --</option>
+                <option v-for="ast in assets" :key="ast.asset_id" :value="ast.asset_id">
+                  {{ ast.name }} ({{ ast.asset_id }})
+                </option>
+              </select>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -322,6 +343,7 @@ const router = useRouter()
 
 const isLoading = ref(false)
 const machinery = ref([])
+const assets = ref([])
 
 const showModal = ref(false)
 const showIssueWoModal = ref(false)
@@ -381,6 +403,7 @@ const assignableWorkers = computed(() => {
 })
 
 const formData = ref({
+  asset: '',
   equipment_name: '',
   equipment_type: 'Generator',
   serial_number: '',
@@ -417,6 +440,25 @@ const fetchMachinery = async () => {
     toast.error("Error", { description: "Server connection failed." })
   } finally {
     isLoading.value = false
+  }
+}
+
+const fetchAssets = async () => {
+  try {
+    const params = new URLSearchParams()
+    if (authState.selectedVessel) {
+      params.append('vessel_id', authState.selectedVessel.asset_id)
+    }
+    const response = await fetch(`${API_BASE_URL}/asset/assets/?${params.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
+    })
+    if (response.ok) {
+      assets.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Error fetching assets:', error)
   }
 }
 
@@ -523,6 +565,7 @@ const openEditModal = (mac) => {
   isEditMode.value = true
   editingMacId.value = mac.id
   formData.value = {
+    asset: mac.asset || '',
     equipment_name: mac.equipment_name,
     equipment_type: mac.equipment_type,
     serial_number: mac.serial_number,

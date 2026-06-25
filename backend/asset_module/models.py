@@ -61,6 +61,7 @@ class MachineryEquipment(models.Model):
     """Equipment with operating hours tracking for predictive maintenance"""
     id = models.AutoField(primary_key=True)
     vessel = models.ForeignKey(Vessel, on_delete=models.CASCADE, related_name='machinery_equipment')
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='machinery_equipment', null=True, blank=True)
     equipment_name = models.CharField(max_length=100)
     equipment_type = models.CharField(max_length=100)  # ex: Pump, Compressor, Generator
     serial_number = models.CharField(max_length=100, unique=True)

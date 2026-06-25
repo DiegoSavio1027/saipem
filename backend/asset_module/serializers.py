@@ -26,6 +26,7 @@ class AssetSerializer(serializers.ModelSerializer):
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
     vibration = serializers.DecimalField(source='current_vibration', max_digits=5, decimal_places=2, read_only=True)
     temperature = serializers.DecimalField(source='current_temperature', max_digits=5, decimal_places=2, read_only=True)
+    machinery_count = serializers.IntegerField(source='machinery_equipment.count', read_only=True)
     rul_hours = serializers.SerializerMethodField()
     predicted_failure_date = serializers.SerializerMethodField()
     assigned_decks = serializers.PrimaryKeyRelatedField(
@@ -68,6 +69,7 @@ class AssetSerializer(serializers.ModelSerializer):
 # ==========================================
 class MachineryEquipmentSerializer(serializers.ModelSerializer):
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
+    asset_name = serializers.CharField(source='asset.name', read_only=True)
     hours_until_maintenance = serializers.IntegerField(read_only=True)
     needs_maintenance = serializers.BooleanField(read_only=True)
     vibration = serializers.DecimalField(source='current_vibration', max_digits=5, decimal_places=2, read_only=True)

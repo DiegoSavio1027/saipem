@@ -81,7 +81,7 @@
           </div>
           <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-0.5 uppercase tracking-tight">{{ asset.name }}</h3>
           <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-mono">
-            {{ asset.vessel_name || asset.vessel }} • {{ asset.capacity }}
+            {{ asset.vessel_name || asset.vessel }} • {{ asset.capacity }} • {{ asset.machinery_count || 0 }} Machines
             <span v-if="asset.assigned_decks_details && asset.assigned_decks_details.length > 0">
               • {{ asset.assigned_decks_details.map(d => d.deck_name).join(', ') }}
             </span>
