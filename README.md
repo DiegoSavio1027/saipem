@@ -24,11 +24,12 @@
   - **Smart Blocker MCU:** Sistem otomatis mencegah pekerja yang berstatus medis *UNFIT* atau sertifikasi kesehatannya telah *EXPIRED* untuk dijadwalkan ke lapangan kerja.
 - **Asset Module (Manajemen Kapal & Peralatan):**
   - Manajemen detail kapal (Vessel) beserta lokasinya (deck/area).
-  - Pelacakan Machinery, Spare Parts, Inventory, dan Maintenance Tasks.
-  - Work Order (Surat Perintah Kerja) untuk setiap aset.
+  - Pelacakan Machinery, Inventory Terpadu (Material & Suku Cadang), dan Maintenance Tasks.
+  - Terintegrasi dengan **IoT Telemetry Streaming** untuk memantau suhu (Temperature) dan getaran (Vibration) mesin secara *real-time* melalui grafik interaktif.
+  - Work Order (Surat Perintah Kerja) untuk setiap aset dengan fitur pemotongan stok otomatis (Auto-Deduct Inventory).
 - **HSE Module (K3 & Personnel On Board):**
   - Pembuatan dan persetujuan elektronik untuk *Permit to Work* (PTW).
-  - Sistem pencatatan POB (Personnel On Board) *real-time* berbasis WebSocket dan Redis.
+  - Sistem pencatatan POB (Personnel On Board) *real-time* berbasis WebSocket (In-Memory Channel Layer).
   - Manajemen Laporan Insiden (Incident Management).
 - **Dashboard Interaktif & Analitik:** Visualisasi data komprehensif bagi pimpinan untuk memantau keselamatan dan operasional harian.
 
@@ -73,7 +74,7 @@ saipem-hse/
 | --- | --- | --- |
 | Pengecekan MCU/Sertifikat pekerja dilakukan manual via dokumen kertas/Excel sebelum ditugaskan ke kapal lepas pantai. | **Smart Blocker:** Sistem secara otomatis menolak pembuatan Roster jika status MCU pekerja *UNFIT* atau sudah lewat tanggal kedaluwarsa. | Menghilangkan risiko kelalaian (human error) 100%, memangkas waktu verifikasi medis dari jam menjadi instan. |
 | Pengajuan *Permit to Work* (PTW) memakan waktu lama karena pencarian tanda tangan fisik *Safety Officer*. | Persetujuan PTW dilakukan secara digital. Form langsung terhubung ke status aset dan pekerja. | Memangkas waktu tunggu dokumen hingga 80%, pekerjaan lebih cepat dimulai. |
-| Manajemen Maintenance dan Work Order aset dicatat dalam dokumen terpisah dengan risiko hilang. | *Work Order* dan *Maintenance Task* terhubung ke *Inventory*. Penggunaan *Spare Part* tercatat otomatis. | Perencanaan pemeliharaan lebih presisi dan riwayat servis terpusat (*traceable*). |
+| Manajemen Maintenance dan Work Order aset dicatat dalam dokumen terpisah dengan risiko hilang. | *Work Order* dan *Maintenance Task* terhubung ke *Inventory*. Penggunaan material dicadangkan otomatis (reserved). | Perencanaan pemeliharaan lebih presisi dan riwayat servis terpusat (*traceable*). |
 | Sulit melacak total *Personnel On Board* (POB) di atas kapal. | Sistem POB terhubung dengan jadwal *Roster* HR. | Total manifest penumpang (POB) terpantau transparan dan *real-time*. |
 
 ---
@@ -132,24 +133,27 @@ sequenceDiagram
 sequenceDiagram
     participant Eng as Engineer
     participant System as Saipem UOS
-    participant DB as Inventory & Asset DB
+    participant DB as Inventory DB
     
-    Eng->>System: Buat Work Order (WO) untuk Machinery X
+    Eng->>System: Buat Work Order (WO)
     System-->>Eng: WO Terbuat (Pending)
     
-    Eng->>System: Tambahkan Sparepart yang digunakan ke WO
+    Eng->>System: Tambahkan Material ke WO
     activate System
-    System->>DB: Cek Stok Sparepart (Inventory)
+    System->>DB: Cek Available Stok (Stok Fisik - Reserved)
     alt Stok Cukup
-        System->>DB: Kurangi Stok (Deduct Inventory)
-        System-->>Eng: Sparepart Ditambahkan
+        System->>DB: Tambah ke Quantity Reserved (Booking)
+        System-->>Eng: Material Ditambahkan ke WO
     else Stok Kurang
         System--xEng: ❌ Error: Insufficient Stock
     end
     deactivate System
     
-    Eng->>System: Selesaikan WO (Complete)
+    Eng->>System: Selesaikan WO (Completed)
+    activate System
+    System->>DB: Potong Stok Fisik & Lepas Reservasi
     System->>DB: Update Status Machinery (Operational)
+    deactivate System
 ```
 
 ---
@@ -226,12 +230,11 @@ Manajemen Lokasi (Deck/Area) dan penghubungan ke Kapal Utama.
 
 | Aktor / Role | Hak Akses & Aksi Spesifik di Aplikasi | Automasi & Proses Sistem di Latar Belakang |
 | --- | --- | --- |
-| **Super Admin / System Administrator** | • *Full Access* ke semua modul sistem.<br>• Manajemen CRUD Akun Pengguna & Role (Assign Role, reset password).<br>• Manajemen Master Data Absolut: *Vessel, Machinery, Job Positions, Location/Deck, Inventory*. | • Log audit sistem terekam untuk setiap perubahan data kritikal.<br>• Menerapkan perlindungan integritas relasi *database* (misal: memblokir penghapusan *Vessel* jika masih ada pekerja *On Board* atau PTW aktif di dalamnya). |
-| **HR Manager / HR Admin** | • Menambahkan profil *Employee*, *Job Position*, dan histori *Certification* pekerja.<br>• Menyusun jadwal alokasi pekerja (*Roster Matrix*) ke lokasi/kapal tertentu.<br>• Melakukan pembaruan status kelayakan *Medical Check-Up* (MCU).<br>• Memproses kalkulasi *Payroll/Timesheet* otomatis.<br>• Memantau *Analytics Dashboard* departemen HR. | • **Smart MCU Blocker:** Sistem secara *real-time* menolak form penjadwalan *Roster* jika pekerja berstatus medis *UNFIT* atau sertifikasinya *EXPIRED*.<br>• Kalkulasi penggajian otomatis di- *generate* berdasarkan *Daily Rate* posisi dikali dengan durasi hari pada *Roster*.<br>• *Auto-trigger* penambahan kuota manifest *Personnel On Board* (POB) kapal saat jadwal pekerja dimulai. |
-| **HSE Officer / Safety Inspector** | • Membuat form *Permit to Work* (PTW) untuk pekerjaan berisiko (Panas, Dingin, Ruang Terbatas).<br>• Menginput *Incident Report* (Laporan Kecelakaan Kerja) lengkap dengan kronologi.<br>• Memantau daftar riil *Personnel On Board* (POB) harian.<br>• Mengupdate *System Status* keamanan operasional. | • **PTW Location Conflict Check:** Sistem memastikan lokasi/deck *Permit to Work* tidak tumpang tindih dengan pekerjaan berbahaya lainnya di area yang sama.<br>• Sistem otomatis memverifikasi pekerja yang dimasukkan ke form PTW benar-benar sedang berada di kapal tersebut (*POB Validation*).<br>• Sistem secara otomatis mengakumulasi log *Safe Man Hours* harian dari total POB. |
-| **Asset Engineer / Maintenance Manager** | • Menerbitkan dan menjalankan *Work Order* (WO) untuk peralatan mesin.<br>• Mengelola stok masuk/keluar *Spare Part* & *Inventory*.<br>• Menjadwalkan *Maintenance Tasks* berkala untuk tiap *Machinery* di atas kapal. | • **Auto-Deduct Inventory:** Sistem otomatis mengurangi (deduct) stok barang di *Inventory* secara *real-time* ketika suku cadang digunakan di dalam suatu WO aktif.<br>• Sistem otomatis mengubah status operasional mesin menjadi *Under Maintenance* selama WO berjalan, mencegah mesin digunakan dalam operasional (terhubung ke modul HSE). |
-| **Executive Management / OIM (Offshore Installation Manager)** | • Memiliki kewenangan akhir untuk melakukan *Approval* atau *Rejection* terhadap *Permit to Work* (PTW).<br>• Melakukan *Approval* terhadap *Work Order* yang membutuhkan material/biaya tingkat tinggi.<br>• Mengakses *High-Level Analytics Dashboard* (Statistik Insiden, Total POB Lintas Kapal, Utilisasi Pekerja). | • Saat izin PTW di-*approve*, form tersebut otomatis terkunci oleh sistem (*hukum read-only / immutable*) untuk tujuan audit.<br>• Status *Permit to Work* otomatis berubah menjadi *Active*.<br>• Mengkompilasi agregasi Big Data dari 3 modul (HR, HSE, Asset) menjadi visualisasi grafik tanpa membebani *query* performa harian aplikasi. |
-| **Offshore Crew / General Worker** | • *Read-only access* ke portal pekerja.<br>• Melihat detail jadwal *Roster* keberangkatan dan penugasan lokasi pribadi miliknya.<br>• Mengecek masa berlaku *Certification* dan *MCU* pribadinya sendiri. | • Sistem *cron job* dapat men-*trigger* notifikasi peringatan (misal H-30) kepada pekerja secara sistemik jika sertifikat atau pemeriksaan medisnya akan segera kedaluwarsa. |
+| **Admin / System Administrator** | • *Full Access* ke semua modul sistem.<br>• Manajemen CRUD Akun Pengguna & Role (Assign Role, reset password).<br>• Manajemen Master Data Absolut: *Vessel, Machinery, Job Positions, Location/Deck, Inventory*. | • Log audit sistem terekam untuk setiap perubahan data kritikal.<br>• Menerapkan perlindungan integritas relasi *database* (misal: memblokir penghapusan *Vessel* jika masih ada pekerja *On Board* atau PTW aktif di dalamnya). |
+| **HR Staff** | • Menambahkan profil *Employee*, *Job Position*, dan histori *Certification* pekerja.<br>• Menyusun jadwal alokasi pekerja (*Roster Matrix*) ke lokasi/kapal tertentu.<br>• Melakukan pembaruan status kelayakan *Medical Check-Up* (MCU).<br>• Memproses kalkulasi *Payroll/Timesheet* otomatis.<br>• Memantau *Analytics Dashboard* departemen HR. | • **Smart MCU Blocker:** Sistem secara *real-time* menolak form penjadwalan *Roster* jika pekerja berstatus medis *UNFIT* atau sertifikasinya *EXPIRED*.<br>• Kalkulasi penggajian otomatis di- *generate* berdasarkan *Daily Rate* posisi dikali dengan durasi hari pada *Roster*.<br>• *Auto-trigger* penambahan kuota manifest *Personnel On Board* (POB) kapal saat jadwal pekerja dimulai. |
+| **Safety Officer** | • Membuat form *Permit to Work* (PTW) untuk pekerjaan berisiko (Panas, Dingin, Ruang Terbatas).<br>• Melakukan *Approval* atau penolakan atas PTW.<br>• Menginput *Incident Report* (Laporan Kecelakaan Kerja).<br>• Memantau daftar riil *Personnel On Board* (POB) harian.<br>• Mengupdate *System Status* keamanan operasional. | • **PTW Location Conflict Check:** Sistem memastikan lokasi/deck *Permit to Work* tidak tumpang tindih dengan pekerjaan berbahaya lainnya di area yang sama.<br>• Saat izin PTW di-*approve*, form tersebut otomatis terkunci oleh sistem (*hukum read-only / immutable*) untuk tujuan audit.<br>• Sistem otomatis mengakumulasi log *Safe Man Hours* harian dari total POB. |
+| **Chief Engineer** | • Menerbitkan dan menjalankan *Work Order* (WO) untuk peralatan mesin.<br>• Mengelola stok Inventaris Terpadu secara sentral.<br>• Menjadwalkan *Maintenance Tasks* berkala untuk tiap *Machinery* di atas kapal. | • **Smart Inventory Reservation:** Sistem akan mereservasi (*booking*) stok secara otomatis saat material ditambahkan ke WO, dan baru benar-benar memotong stok fisik ketika WO dinyatakan *Completed*.<br>• Sistem otomatis mengubah status operasional mesin menjadi *Under Maintenance* selama WO berjalan, mencegah mesin digunakan dalam operasional (terhubung ke modul HSE). |
+| **Worker (Offshore Crew)** | • *Read-only access* ke portal pekerja (Tampilan khusus Worker Dashboard).<br>• Melihat detail jadwal *Roster* keberangkatan dan penugasan lokasi pribadi miliknya.<br>• Mengecek masa berlaku *Certification* dan *MCU* pribadinya sendiri.<br>• Mengakses form cetak untuk PTW yang ditugaskan kepadanya. | • Pekerja hanya bisa mengakses modul terkait dirinya, dan akses menu di sidebar (*Sidebar*) otomatis disembunyikan berdasarkan *Role* untuk menjaga keamanan data. |
 
 ---
 
@@ -250,7 +253,6 @@ Pastikan sistem operasi Anda (Windows/macOS/Linux) telah terpasang perangkat lun
 - **Python** (>= 3.10)
 - **Node.js** (>= 18.x) & **NPM** (>= 9.x)
 - **PostgreSQL** atau **SQLite** (Default untuk *development*)
-- **Redis Server** (Wajib untuk fitur *real-time WebSocket* & POB)
 - **Git**
 
 ---
@@ -315,7 +317,6 @@ cd saipem-hse
 ### Prerequisites
 - Python 3.10+
 - PostgreSQL 12+ (atau SQLite bawaan Django)
-- Redis Server (Wajib untuk fitur real-time WebSocket)
 - pip (Python package manager)
 
 ### Installation Steps
@@ -389,7 +390,6 @@ python manage.py createsuperuser
 
 **8. Start development server**
 ```bash
-# Pastikan server Redis sudah berjalan sebelum mengeksekusi ini
 python manage.py runserver 0.0.0.0:8989
 ```
 
