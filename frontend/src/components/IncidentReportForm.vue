@@ -61,7 +61,7 @@
             <SelectContent>
               <SelectGroup>
                 <SelectItem v-for="location in locations" :key="location.id" :value="location.id">
-                  {{ location.name }}
+                  {{ location.deck_name || location.name }}
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
@@ -252,8 +252,8 @@ const fetchLocations = async () => {
       locations.value = [];
       return;
     }
-    // Fetch from HSE POB module with vessel filter
-    const response = await fetch(`${API_BASE_URL}/hse/pob/work-locations/?vessel_id=${vesselId}`, {
+    // Fetch from offshore module with vessel filter
+    const response = await fetch(`${API_BASE_URL}/offshore/locations/?vessel_id=${vesselId}`, {
       headers: {
         'Authorization': `Bearer ${getAccessToken()}`
       }

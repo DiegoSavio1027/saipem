@@ -7,7 +7,7 @@ class IncidentSerializer(serializers.ModelSerializer):
     """Serializer for Incident model"""
 
     severity_display = serializers.CharField(source='get_severity_display', read_only=True)
-    location_name = serializers.CharField(source='location.name', read_only=True)
+    location_name = serializers.CharField(source='location.deck_name', read_only=True)
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     impact = serializers.SerializerMethodField()
