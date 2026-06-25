@@ -17,21 +17,23 @@
 
 ## 🚀 Fitur Utama (Key Features)
 
-- **Sistem Autentikasi Terpusat:** Role-Based Access Control (RBAC) dengan JWT (JSON Web Token) untuk Admin, HR, HSE Officer, dan Management.
+- **Sistem Autentikasi Terpusat:** Role-Based Access Control (RBAC) dengan JWT (JSON Web Token) untuk Admin, HR, HSE Officer, Chief Engineer, dan Worker.
+- **Multi-Vessel Operations:** Mendukung manajemen operasional, aset, dan pekerja di berbagai kapal (contoh: Saipem 7000, Castorone) secara tersentralisasi.
 - **HR Module (Manajemen Personalia & Jadwal):**
   - Manajemen data karyawan lengkap beserta histori sertifikasinya.
   - Penjadwalan Roster pekerja ke kapal (vessel) secara real-time.
   - **Smart Blocker MCU:** Sistem otomatis mencegah pekerja yang berstatus medis *UNFIT* atau sertifikasi kesehatannya telah *EXPIRED* untuk dijadwalkan ke lapangan kerja.
-- **Asset Module (Manajemen Kapal & Peralatan):**
-  - Manajemen detail kapal (Vessel) beserta lokasinya (deck/area).
-  - Pelacakan Machinery, Inventory Terpadu (Material & Suku Cadang), dan Maintenance Tasks.
-  - Terintegrasi dengan **IoT Telemetry Streaming** untuk memantau suhu (Temperature) dan getaran (Vibration) mesin secara *real-time* melalui grafik interaktif.
-  - Work Order (Surat Perintah Kerja) untuk setiap aset dengan fitur pemotongan stok otomatis (Auto-Deduct Inventory).
-- **HSE Module (K3 & Personnel On Board):**
-  - Pembuatan dan persetujuan elektronik untuk *Permit to Work* (PTW).
-  - Sistem pencatatan POB (Personnel On Board) *real-time* berbasis WebSocket (In-Memory Channel Layer).
+- **Asset Module (Sistem Manajemen Aset & Predictive Maintenance):**
+  - **Asset Systems**: Mewakili sistem hierarki induk (misal: Helideck Safety System).
+  - **Machinery Equipment**: Komponen fisik di dalam sistem (misal: Main Generator A) dengan pelacakan *Operating Hours* dan penjadwalan *Maintenance*.
+  - Terintegrasi dengan **IoT Telemetry Streaming** untuk memantau suhu (Temperature) dan getaran (Vibration) mesin secara *real-time* dengan visualisasi persentase **Fleet Health Score (OEE)**.
+  - Work Order (Surat Perintah Kerja) untuk setiap machinery dengan fitur pemotongan stok otomatis (Auto-Deduct Inventory).
+- **HSE Module (K3, Permit to Work & Personnel On Board):**
+  - Pembuatan dan persetujuan elektronik untuk *Permit to Work* (PTW) dengan fitur *Location Conflict Check* dan *Lockout/Tagout (LOTO)*.
+  - Sistem pencatatan **Personnel On Board (POB)** *real-time* berbasis WebSocket (In-Memory Channel Layer).
   - Manajemen Laporan Insiden (Incident Management).
-- **Dashboard Interaktif & Analitik:** Visualisasi data komprehensif bagi pimpinan untuk memantau keselamatan dan operasional harian.
+  - **Emergency Muster Drill (Test Alarm)**: Pemicu status darurat (YELLOW/RED) yang langsung mengunci *Permit to Work* aktif dan mengirimkan notifikasi *live* melalui WebSocket ke seluruh pengguna.
+- **Dashboard Interaktif & Analitik:** Visualisasi data komprehensif bagi pimpinan untuk memantau KPI keselamatan, *Fleet Operating Hours*, dan stok inventaris.
 
 ---
 
@@ -131,14 +133,21 @@ sequenceDiagram
 ### 3. Alur ASSET - Work Order & Maintenance
 ```mermaid
 sequenceDiagram
-    participant Eng as Engineer
+    participant Eng as Chief Engineer
     participant System as Saipem UOS
     participant DB as Inventory DB
+    participant Mac as Machinery / IoT
     
-    Eng->>System: Buat Work Order (WO)
+    Mac-->>System: Transmit Telemetry (Temp/Vib) & Operating Hours
+    System->>System: Check against Maintenance Interval
+    alt Hours >= Interval
+        System-->>Eng: ⚠️ Critical Machinery Alert (Needs Maintenance)
+    end
+
+    Eng->>System: Buat Work Order (WO) untuk Mesin Kritis
     System-->>Eng: WO Terbuat (Pending)
     
-    Eng->>System: Tambahkan Material ke WO
+    Eng->>System: Tambahkan Material (Inventory) ke WO
     activate System
     System->>DB: Cek Available Stok (Stok Fisik - Reserved)
     alt Stok Cukup
@@ -152,8 +161,30 @@ sequenceDiagram
     Eng->>System: Selesaikan WO (Completed)
     activate System
     System->>DB: Potong Stok Fisik & Lepas Reservasi
-    System->>DB: Update Status Machinery (Operational)
+    System->>Mac: Reset Maintenance Date & Update Status
     deactivate System
+```
+
+### 4. Alur HSE - Emergency Muster Drill (Test Alarm)
+```mermaid
+sequenceDiagram
+    participant Admin as Admin / Safety Officer
+    participant Sys as System Backend (Django)
+    participant WS as WebSocket Channel Layer
+    participant Crew as Offshore Crew UI
+    
+    Admin->>Sys: Klik "Test Alarm" (Select Vessel, Status RED/YELLOW)
+    activate Sys
+    Sys->>Sys: Hitung pekerja aktif di area berbahaya (Active PTW)
+    Sys->>Sys: Kunci seluruh operasional PTW di Kapal
+    Sys->>WS: Broadcast EMERGENCY_ALERT
+    deactivate Sys
+    
+    WS-->>Crew: 🚨 WebSocket Event Received
+    activate Crew
+    Crew->>Crew: Tampilkan Layar Merah/Kuning & Mainkan Audio Alarm
+    Crew->>Crew: Tampilkan Manifest Pekerja Evakuasi
+    deactivate Crew
 ```
 
 ---

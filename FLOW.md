@@ -8,39 +8,78 @@ Sistem ini dirancang menggunakan konsep **"Safety Interlocks"** di mana data dar
 
 ## 1. Bagan Sekuensial Hubungan Data ("The Golden Thread")
 
-### A. Alur Modul Terintegrasi (Bagan Teks Unicode - Kompatibel Semua Editor)
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                          1. MODUL MASTER DATA                          │
-│        (Registrasi Kapal & Deck Locations -> Kunci Area Bahaya)        │
-└──────────────────────────────────┬─────────────────────────────────────┘
-                                   │
-                                   ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                            2. MODUL HR                                 │
-│        (Registrasi Kru & Update MCU -> Kunci Status Medis "FIT")       │
-└──────────────────────────────────┬─────────────────────────────────────┘
-                                   │
-                                   ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                           3. MODUL ASSET                               │
-│       (Pemantauan IoT Mesin -> Over-threshold -> Auto Work Order)      │
-└──────────────────────────────────┬─────────────────────────────────────┘
-                                   │
-                                   ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                         4. MODUL HSE - PTW                             │
-│       (Validasi Otomatis Kru, MCU, Sertifikat -> Izin Kerja Rilis)     │
-└──────────────────────────────────┬─────────────────────────────────────┘
-                                   │
-                                   ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                         5. MODUL HSE - POB                             │
-│     (Start Work PTW -> Auto Check-in Kru Ke Manifes Live POB Deck)     │
-└────────────────────────────────────────────────────────────────────────┘
+### A. System Architecture Diagram
+```mermaid
+graph TD
+    subgraph Frontend [Frontend (Vue 3 + Vite)]
+        UI[User Interface]
+        Store[Pinia State Management]
+        WS_Client[WebSocket Client]
+    end
+
+    subgraph Backend [Backend (Django REST Framework)]
+        API[REST APIs]
+        Auth[JWT Authentication]
+        WS_Server[Channels / WebSocket Server]
+        Tasks[Background Tasks / IoT Simulator]
+    end
+
+    subgraph Database [Data Storage]
+        DB[(PostgreSQL / SQLite)]
+        Cache[(Redis / In-Memory Channel Layer)]
+    end
+
+    UI <-->|HTTP/REST| API
+    UI <-->|WebSocket| WS_Server
+    API --> Auth
+    API --> DB
+    WS_Server --> Cache
+    Tasks --> DB
+    Tasks --> WS_Server
 ```
 
-### B. Bagan Sekuensial Detail (Mermaid Diagram)
+### B. Data Model Relationship Diagram (ERD)
+```mermaid
+erDiagram
+    VESSEL ||--o{ ASSET : "has"
+    VESSEL ||--o{ MACHINERY : "has"
+    VESSEL ||--o{ LOCATION : "contains"
+    ASSET ||--o{ MACHINERY : "contains"
+    
+    EMPLOYEE ||--o{ ROSTER : "assigned to"
+    ROSTER }o--|| VESSEL : "onboard"
+    
+    MACHINERY ||--o{ WORK_ORDER : "requires"
+    WORK_ORDER ||--o{ INVENTORY : "consumes"
+    
+    PERMIT_TO_WORK }o--|| VESSEL : "takes place on"
+    PERMIT_TO_WORK }o--|| LOCATION : "at"
+    PERMIT_TO_WORK }o--|| WORK_ORDER : "resolves"
+    
+    VESSEL {
+        int id PK
+        string vessel_name
+    }
+    ASSET {
+        string asset_id PK
+        int health_score
+    }
+    MACHINERY {
+        int id PK
+        int operating_hours
+        decimal current_vibration
+    }
+    PERMIT_TO_WORK {
+        string permit_id PK
+        string status
+    }
+    EMPLOYEE {
+        string emp_id PK
+        string mcu_status
+    }
+```
+
+### C. Master Workflow Sequence (Mermaid Diagram)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -238,3 +277,14 @@ sequenceDiagram
         *   Status PTW berubah menjadi `CLOSED`.
         *   Backend otomatis mengubah status Work Order terkait (`WO-9988`) menjadi `COMPLETED` dan mencatat tanggal penyelesaian.
 *   **Hasil Akhir**: Pekerjaan selesai dengan aman, manifes kapal bersih (kru tercatat keluar dengan selamat), dan Work Order tertutup sukses.
+
+### Langkah 10: Emergency Muster Drill (Kondisi Darurat)
+*   **Aktor**: Safety Officer / Admin.
+*   **Alur Frontend (FE)**:
+    1.  Dalam keadaan darurat, Safety Officer menekan tombol **Test Alarm** di menu navigasi atas.
+    2.  Sistem mengirim parameter status (RED/YELLOW) dan kapal (`vessel_id`) ke `/api/v1/hse/test-trigger/`.
+*   **Alur Backend (BE)**:
+    1.  Backend mendeteksi PTW yang sedang `IN_PROGRESS` pada kapal tersebut dan menguncinya.
+    2.  Status sistem HSE global diubah menjadi status darurat.
+    3.  Backend melakukan penyiaran sinyal via *WebSocket Channel* ke semua pengguna yang sedang online.
+*   **Hasil Akhir**: Semua layar pengguna akan menampilkan peringatan bahaya, pemutaran suara alarm darurat, dan ringkasan manifes pekerja yang terjebak di area berbahaya (Active PTW Location).
