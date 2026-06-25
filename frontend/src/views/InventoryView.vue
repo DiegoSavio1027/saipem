@@ -32,6 +32,8 @@
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700">Item Name</th>
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700">Category</th>
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700 text-center">Current Stock</th>
+                <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700 text-center">Reserved</th>
+                <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700 text-center">Unit Cost ($)</th>
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700 text-center">Status</th>
                 <th v-if="authState.userRole === 'Admin' || authState.userRole === 'Chief Engineer'" class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700 text-right">Actions</th>
               </tr>
@@ -49,6 +51,14 @@
                     {{ item.current_stock }}
                   </span>
                   <span class="text-[10px] text-slate-400 block font-mono">Min: {{ item.minimum_stock }}</span>
+                </td>
+                <td class="px-6 py-4 text-center">
+                  <span class="font-mono text-lg text-slate-700 dark:text-slate-300 font-bold">
+                    {{ item.quantity_reserved }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-center text-slate-700 dark:text-slate-300">
+                  {{ item.unit_cost }}
                 </td>
                 <td class="px-6 py-4 text-center">
                   <Badge :variant="item.current_stock <= item.minimum_stock ? 'destructive' : 'secondary'" class="text-[10px] font-black uppercase tracking-wider font-mono">
@@ -96,11 +106,19 @@
               </div>
               <div>
                 <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Category *</label>
+                <select v-model="selectedCategory" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)]" required>
+                  <option value="Spare Part">Spare Part</option>
+                  <option value="Consumable">Consumable</option>
+                  <option value="Equipment">Equipment</option>
+                  <option value="PPE">PPE</option>
+                  <option value="Others">Others (Manual Entry)</option>
+                </select>
                 <input
-                  v-model="formData.category"
+                  v-if="selectedCategory === 'Others'"
+                  v-model="customCategory"
                   type="text"
-                  placeholder="e.g. Consumable"
-                  class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)]"
+                  placeholder="Enter custom category"
+                  class="w-full px-3 py-2 mt-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)]"
                   required
                 />
               </div>
@@ -140,6 +158,28 @@
               </div>
             </div>
 
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Supplier</label>
+                <input
+                  v-model="formData.supplier"
+                  type="text"
+                  placeholder="e.g. Acme Corp"
+                  class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)]"
+                />
+              </div>
+              <div>
+                <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Unit Cost ($)</label>
+                <input
+                  v-model.number="formData.unit_cost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none"
+                />
+              </div>
+            </div>
+
             <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
               <Button type="button" variant="outline" @click="closeModal" class="font-bold">
                 Cancel
@@ -171,12 +211,18 @@ const inventory = ref([])
 const showModal = ref(false)
 const isEditMode = ref(false)
 
+const predefinedCategories = ['Spare Part', 'Consumable', 'Equipment', 'PPE']
+const selectedCategory = ref('Spare Part')
+const customCategory = ref('')
+
 const formData = ref({
   item_code: '',
   item_name: '',
   category: 'Spare Part',
   current_stock: 0,
-  minimum_stock: 10
+  minimum_stock: 10,
+  supplier: '',
+  unit_cost: 0.00
 })
 
 const fetchInventory = async () => {
@@ -203,24 +249,38 @@ const fetchInventory = async () => {
 
 const openAddModal = () => {
   isEditMode.value = false
+  selectedCategory.value = 'Consumable'
+  customCategory.value = ''
   formData.value = {
     item_code: '',
     item_name: '',
     category: 'Consumable',
     current_stock: 0,
-    minimum_stock: 10
+    minimum_stock: 10,
+    supplier: '',
+    unit_cost: 0.00
   }
   showModal.value = true
 }
 
 const openEditModal = (item) => {
   isEditMode.value = true
+  if (predefinedCategories.includes(item.category)) {
+    selectedCategory.value = item.category
+    customCategory.value = ''
+  } else {
+    selectedCategory.value = 'Others'
+    customCategory.value = item.category || ''
+  }
+  
   formData.value = {
     item_code: item.item_code,
     item_name: item.item_name,
     category: item.category,
     current_stock: item.current_stock,
-    minimum_stock: item.minimum_stock
+    minimum_stock: item.minimum_stock,
+    supplier: item.supplier || '',
+    unit_cost: item.unit_cost || 0.00
   }
   showModal.value = true
 }
@@ -231,6 +291,8 @@ const closeModal = () => {
 
 const submitForm = async () => {
   try {
+    formData.value.category = selectedCategory.value === 'Others' ? customCategory.value : selectedCategory.value
+    
     const url = isEditMode.value
       ? `${API_BASE_URL}/asset/inventory/${formData.value.item_code}/`
       : `${API_BASE_URL}/asset/inventory/`

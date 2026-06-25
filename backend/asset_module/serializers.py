@@ -3,7 +3,6 @@ from .models import (
     Vessel,
     Asset,
     MachineryEquipment,
-    SparePart,
     WorkOrder,
     MaintenanceTask,
     InventoryItem
@@ -25,8 +24,8 @@ class VesselSerializer(serializers.ModelSerializer):
 # ==========================================
 class AssetSerializer(serializers.ModelSerializer):
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
-    vibration = serializers.SerializerMethodField()
-    temperature = serializers.SerializerMethodField()
+    vibration = serializers.DecimalField(source='current_vibration', max_digits=5, decimal_places=2, read_only=True)
+    temperature = serializers.DecimalField(source='current_temperature', max_digits=5, decimal_places=2, read_only=True)
     rul_hours = serializers.SerializerMethodField()
     predicted_failure_date = serializers.SerializerMethodField()
     assigned_decks = serializers.PrimaryKeyRelatedField(
@@ -48,28 +47,6 @@ class AssetSerializer(serializers.ModelSerializer):
         return representation
 
 
-    def get_vibration(self, obj):
-        import random
-        from django.utils import timezone
-        # Use simple seed based on asset name length and ID
-        state_seed = len(obj.name) + int(timezone.now().timestamp() // 15) % 100
-        random.seed(state_seed)
-        if obj.status == 'CRITICAL':
-            return round(random.uniform(7.0, 9.8), 2)
-        elif obj.status == 'MAINTENANCE':
-            return round(random.uniform(4.0, 6.0), 2)
-        return round(random.uniform(1.0, 3.2), 2)
-
-    def get_temperature(self, obj):
-        import random
-        from django.utils import timezone
-        state_seed = len(obj.name) + 20 + int(timezone.now().timestamp() // 15) % 100
-        random.seed(state_seed)
-        if obj.status == 'CRITICAL':
-            return round(random.uniform(85.0, 105.0), 1)
-        elif obj.status == 'MAINTENANCE':
-            return round(random.uniform(65.0, 78.0), 1)
-        return round(random.uniform(35.0, 55.0), 1)
 
     def get_rul_hours(self, obj):
         if obj.status == 'CRITICAL':
@@ -93,8 +70,8 @@ class MachineryEquipmentSerializer(serializers.ModelSerializer):
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
     hours_until_maintenance = serializers.IntegerField(read_only=True)
     needs_maintenance = serializers.BooleanField(read_only=True)
-    vibration = serializers.SerializerMethodField()
-    temperature = serializers.SerializerMethodField()
+    vibration = serializers.DecimalField(source='current_vibration', max_digits=5, decimal_places=2, read_only=True)
+    temperature = serializers.DecimalField(source='current_temperature', max_digits=5, decimal_places=2, read_only=True)
     rul_hours = serializers.SerializerMethodField()
     predicted_failure_date = serializers.SerializerMethodField()
     health_percentage = serializers.SerializerMethodField()
@@ -103,32 +80,6 @@ class MachineryEquipmentSerializer(serializers.ModelSerializer):
         model = MachineryEquipment
         fields = '__all__'
 
-    def get_vibration(self, obj):
-        import random
-        from django.utils import timezone
-        # Seed by id to make it stable but add a small fluctuation
-        state_seed = obj.id + int(timezone.now().timestamp() // 10) % 100
-        random.seed(state_seed)
-        
-        if obj.needs_maintenance:
-            # High vibration when needs maintenance
-            return round(random.uniform(6.5, 9.2), 2)
-        else:
-            # Normal vibration
-            return round(random.uniform(1.2, 3.8), 2)
-
-    def get_temperature(self, obj):
-        import random
-        from django.utils import timezone
-        state_seed = obj.id + 10 + int(timezone.now().timestamp() // 10) % 100
-        random.seed(state_seed)
-        
-        if obj.needs_maintenance:
-            # High temperature when needs maintenance
-            return round(random.uniform(78.0, 94.5), 1)
-        else:
-            # Normal temperature
-            return round(random.uniform(42.0, 68.5), 1)
 
     def get_rul_hours(self, obj):
         return obj.hours_until_maintenance
@@ -155,24 +106,18 @@ class MachineryEquipmentSerializer(serializers.ModelSerializer):
 # ==========================================
 # SPARE PART SERIALIZER
 # ==========================================
-class SparePartSerializer(serializers.ModelSerializer):
-    vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
-    low_stock = serializers.BooleanField(read_only=True)
 
-    class Meta:
-        model = SparePart
-        fields = '__all__'
 
 
 from .models import WorkOrderMaterial
 
 class WorkOrderMaterialSerializer(serializers.ModelSerializer):
-    part_name = serializers.CharField(source='spare_part.part_name', read_only=True)
-    part_number = serializers.CharField(source='spare_part.part_number', read_only=True)
+    part_name = serializers.CharField(source='inventory_item.item_name', read_only=True)
+    part_number = serializers.CharField(source='inventory_item.item_code', read_only=True)
 
     class Meta:
         model = WorkOrderMaterial
-        fields = ['id', 'spare_part', 'part_name', 'part_number', 'quantity_used', 'added_at']
+        fields = ['id', 'inventory_item', 'part_name', 'part_number', 'quantity_used', 'added_at']
 
 
 # ==========================================
@@ -182,6 +127,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
     asset_name = serializers.CharField(source='asset.name', read_only=True, allow_null=True)
     machinery_name = serializers.CharField(source='machinery.equipment_name', read_only=True, allow_null=True)
+    assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True, allow_null=True)
     asset_assigned_decks = serializers.SerializerMethodField()
     materials = WorkOrderMaterialSerializer(many=True, read_only=True)
 
@@ -217,12 +163,17 @@ class MaintenanceTaskSerializer(serializers.ModelSerializer):
 # ==========================================
 class InventoryItemSerializer(serializers.ModelSerializer):
     asset_name = serializers.CharField(source='asset_location.name', read_only=True, allow_null=True)
-    vessel_name = serializers.CharField(source='asset_location.vessel.vessel_name', read_only=True, allow_null=True)
-    is_low_stock = serializers.SerializerMethodField()
+    vessel_name = serializers.SerializerMethodField()
+    low_stock = serializers.BooleanField(read_only=True)
+    available_stock = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = InventoryItem
         fields = '__all__'
 
-    def get_is_low_stock(self, obj):
-        return obj.current_stock <= obj.minimum_stock
+    def get_vessel_name(self, obj):
+        if obj.vessel:
+            return obj.vessel.vessel_name
+        if obj.asset_location and obj.asset_location.vessel:
+            return obj.asset_location.vessel.vessel_name
+        return None

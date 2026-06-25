@@ -66,11 +66,14 @@
             </div>
             <div class="flex items-center gap-2">
               <span :class="['px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider', getStatusColor(asset.status)]">{{ asset.status }}</span>
-              <div v-if="authState.userRole === 'Admin'" class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button @click="openEditModal(asset)" class="text-blue-500 hover:text-blue-700 p-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded transition" title="Edit Asset">
+              <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button @click="openTelemetryModal(asset)" class="text-emerald-500 hover:text-emerald-700 p-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded transition" title="View Telemetry">
+                  <Activity class="w-3.5 h-3.5" />
+                </button>
+                <button v-if="authState.userRole === 'Admin'" @click="openEditModal(asset)" class="text-blue-500 hover:text-blue-700 p-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded transition" title="Edit Asset">
                   <Edit class="w-3.5 h-3.5" />
                 </button>
-                <button @click="deleteAsset(asset.asset_id)" class="text-red-500 hover:text-red-700 p-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded transition" title="Delete Asset">
+                <button v-if="authState.userRole === 'Admin'" @click="deleteAsset(asset.asset_id)" class="text-red-500 hover:text-red-700 p-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded transition" title="Delete Asset">
                   <Trash2 class="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -255,6 +258,48 @@
       </div>
 
     </div>
+    <!-- Issue WO Modal -->
+    <div v-if="showIssueWoModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in duration-200">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white uppercase mb-4">Issue Work Order</h3>
+        <p class="text-xs text-slate-500 mb-4">Assign this critical maintenance task to a lead worker.</p>
+        <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1 text-xs">Assign To (Lead Worker) *</label>
+        <select v-model="selectedAssignee" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)] mb-6" required :disabled="isFetchingEmployees">
+           <option value="" disabled>{{ isFetchingEmployees ? 'Loading...' : 'Select Assignee' }}</option>
+           <option v-for="emp in assignableWorkers" :key="emp.emp_id" :value="emp.emp_id">{{ emp.full_name }} ({{ emp.job_role }})</option>
+        </select>
+        <div class="flex justify-end gap-3">
+          <button @click="showIssueWoModal = false" class="px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
+          <button @click="confirmCreateWorkOrder" class="px-4 py-2 bg-[var(--color-saipem-tertiary)] hover:bg-orange-600 text-white rounded-lg font-bold text-xs" :disabled="!selectedAssignee">Create Work Order</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Telemetry Chart Modal -->
+    <div v-if="showTelemetryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-3xl w-full p-6 animate-in fade-in duration-200">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white uppercase">Asset Telemetry: {{ selectedTelemetryAsset?.name }}</h3>
+            <p class="text-xs text-slate-500 font-mono mt-1">Live streaming historical sensor data (Vibration & Temperature)</p>
+          </div>
+          <button @click="closeTelemetryModal" class="text-slate-400 hover:text-slate-600 transition">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div v-if="isFetchingTelemetry" class="flex justify-center p-12">
+          <p class="text-slate-500 text-sm animate-pulse font-mono">Fetching IoT stream...</p>
+        </div>
+        <div v-else-if="telemetryChartData" class="h-[300px] w-full">
+          <Line :data="telemetryChartData" :options="chartOptions" />
+        </div>
+        <div v-else class="flex justify-center p-12 text-slate-500 text-sm font-mono">
+          No telemetry data available for this asset.
+        </div>
+      </div>
+    </div>
+
   </DashboardLayout>
 </template>
 
@@ -263,10 +308,14 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Edit, Trash2, Gauge, Thermometer, Cpu, CheckCircle, AlertTriangle } from '@lucide/vue'
+import { Plus, Edit, Trash2, Gauge, Thermometer, Cpu, CheckCircle, AlertTriangle, Activity, X } from '@lucide/vue'
 import { authState } from '@/store/auth'
 import { vessels, fetchVessels } from '@/store/vessel'
 import { toast } from 'vue-sonner'
+import { Line } from 'vue-chartjs'
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
 const router = useRouter()
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989/api/v1'
@@ -274,10 +323,62 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989
 const isLoading = ref(false)
 const assets = ref([])
 const showModal = ref(false)
+const showIssueWoModal = ref(false)
+const selectedAssignee = ref('')
+const pendingWoAsset = ref(null)
+const vesselEmployees = ref([])
+const isFetchingEmployees = ref(false)
+
+const showTelemetryModal = ref(false)
+const selectedTelemetryAsset = ref(null)
+const isFetchingTelemetry = ref(false)
+const telemetryChartData = ref(null)
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: {
+    mode: 'index',
+    intersect: false,
+  },
+  plugins: {
+    legend: {
+      position: 'top',
+      labels: { color: '#94a3b8', font: { family: 'monospace' } }
+    },
+    tooltip: { mode: 'index', intersect: false }
+  },
+  scales: {
+    y: {
+      type: 'linear',
+      display: true,
+      position: 'left',
+      title: { display: true, text: 'Vibration (mm/s)', color: '#3b82f6', font: { family: 'monospace', size: 10 } },
+      grid: { color: 'rgba(148, 163, 184, 0.1)' },
+      ticks: { color: '#94a3b8', font: { family: 'monospace', size: 10 } }
+    },
+    y1: {
+      type: 'linear',
+      display: true,
+      position: 'right',
+      title: { display: true, text: 'Temperature (°C)', color: '#ef4444', font: { family: 'monospace', size: 10 } },
+      grid: { drawOnChartArea: false },
+      ticks: { color: '#94a3b8', font: { family: 'monospace', size: 10 } }
+    },
+    x: {
+      grid: { color: 'rgba(148, 163, 184, 0.1)' },
+      ticks: { color: '#94a3b8', font: { family: 'monospace', size: 10 }, maxTicksLimit: 10 }
+    }
+  }
+}
 
 const healthyCount = computed(() => assets.value.filter(a => a.status === 'OPERATIONAL').length)
 const criticalCount = computed(() => assets.value.filter(a => a.status === 'CRITICAL' || a.status === 'MAINTENANCE').length)
 const isEditMode = ref(false)
+
+const assignableWorkers = computed(() => {
+  return vesselEmployees.value.filter(emp => !['Chief Engineer', 'Safety Officer'].includes(emp.job_role))
+})
 
 const formData = ref({
   asset_id: '',
@@ -312,6 +413,8 @@ const fetchDecksForSelectedVessel = async (vesselId) => {
 watch(() => formData.value.vessel, (newVesselId) => {
   fetchDecksForSelectedVessel(newVesselId)
 })
+
+// Unused fetchEmployees removed in favor of dynamic fetch
 
 const fetchAssets = async () => {
   isLoading.value = true
@@ -420,6 +523,66 @@ const deleteAsset = async (assetId) => {
   }
 }
 
+let telemetryInterval = null;
+
+const fetchTelemetryData = async () => {
+  if (!selectedTelemetryAsset.value) return;
+  try {
+    const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+    const response = await fetch(`${API_BASE_URL}/asset/telemetry/history/?asset_id=${selectedTelemetryAsset.value.asset_id}&limit=50&_t=${Date.now()}`, { headers })
+    if (response.ok) {
+      const data = await response.json()
+      console.log('Telemetry API response:', data)
+      console.log('Asset ID used:', selectedTelemetryAsset.value.asset_id)
+      if (data.length > 0) {
+        telemetryChartData.value = {
+          labels: data.map(d => new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })),
+          datasets: [
+            {
+              label: 'Vibration (mm/s)',
+              data: data.map(d => d.vibration),
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              yAxisID: 'y',
+              tension: 0.3,
+              fill: true
+            },
+            {
+              label: 'Temperature (°C)',
+              data: data.map(d => d.temperature),
+              borderColor: '#ef4444',
+              backgroundColor: 'transparent',
+              yAxisID: 'y1',
+              tension: 0.3
+            }
+          ]
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching telemetry:", error)
+  }
+}
+
+const openTelemetryModal = async (asset) => {
+  selectedTelemetryAsset.value = asset
+  showTelemetryModal.value = true
+  isFetchingTelemetry.value = true
+  telemetryChartData.value = null
+  
+  await fetchTelemetryData()
+  isFetchingTelemetry.value = false
+  
+  if (telemetryInterval) clearInterval(telemetryInterval)
+  telemetryInterval = setInterval(fetchTelemetryData, 5000)
+}
+
+const closeTelemetryModal = () => {
+  showTelemetryModal.value = false
+  selectedTelemetryAsset.value = null
+  if (telemetryInterval) clearInterval(telemetryInterval)
+}
+
 const getStatusColor = (status) => {
   const map = {
     'OPERATIONAL': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
@@ -439,6 +602,30 @@ const formatDateOnly = (dateString) => {
 }
 
 const autoCreateWorkOrder = async (asset) => {
+  pendingWoAsset.value = asset
+  selectedAssignee.value = ''
+  showIssueWoModal.value = true
+  isFetchingEmployees.value = true
+  vesselEmployees.value = []
+  
+  try {
+    const vesselId = asset.vessel_id || asset.vessel
+    const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+    const response = await fetch(`${API_BASE_URL}/hse/employees/?vessel_id=${vesselId}`, { headers })
+    if (response.ok) {
+      vesselEmployees.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Error fetching vessel employees:', error)
+  } finally {
+    isFetchingEmployees.value = false
+  }
+}
+
+const confirmCreateWorkOrder = async () => {
+  if (!pendingWoAsset.value || !selectedAssignee.value) return
+  const asset = pendingWoAsset.value
+
   try {
     const timestamp = Date.now().toString().slice(-4)
     const wo_id = `WO-AST-${asset.asset_id}-${timestamp}`
@@ -451,6 +638,7 @@ const autoCreateWorkOrder = async (asset) => {
       priority: asset.status === 'CRITICAL' ? 'CRITICAL' : 'HIGH',
       scheduled_date: new Date().toISOString().split('T')[0],
       status: 'PENDING',
+      assigned_to: selectedAssignee.value,
       created_by: authState.username || 'Chief Engineer'
     }
 
@@ -464,7 +652,8 @@ const autoCreateWorkOrder = async (asset) => {
     })
 
     if (response.ok) {
-      toast.success("Work Order Created", { description: `Automatically created ${wo_id} for ${asset.name}.` })
+      toast.success("Work Order Created", { description: `Automatically created ${wo_id} for ${asset.name} and assigned.` })
+      showIssueWoModal.value = false
       router.push('/assets/work-orders')
     } else {
       const errorData = await response.json()

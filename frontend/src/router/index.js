@@ -125,12 +125,6 @@ const routes = [
         name: 'Inventory',
         component: () => import('@/views/InventoryView.vue'),
         meta: { requiresAuth: true, requiredModule: 'asset' }
-    },
-    {
-        path: '/assets/spareparts',
-        name: 'Spareparts',
-        component: () => import('@/views/SparepartsView.vue'),
-        meta: { requiresAuth: true, requiredModule: 'asset' }
     }
 ];
 

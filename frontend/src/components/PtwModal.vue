@@ -324,7 +324,13 @@ const fetchWorkOrders = async () => {
         }
 
         // Fetch from Asset Module with vessel filter
-        const response = await fetch(`${API_BASE_URL}/asset/workorders/?vessel_id=${vesselId}`, {
+        let url = `${API_BASE_URL}/asset/workorders/?vessel_id=${vesselId}`;
+        
+        if (props.userRole === 'Worker') {
+            url += `&assigned_to=${props.username}`;
+        }
+        
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${getAccessToken()}`
             }

@@ -9,16 +9,16 @@ urlpatterns = [
     path('assets/<str:asset_id>/', views.asset_detail, name='asset_detail'),
 
     # ==========================================
+    # TELEMETRY ENDPOINTS
+    # ==========================================
+    path('telemetry/history/', views.telemetry_history, name='telemetry_history'),
+
+    # ==========================================
     # MACHINERY EQUIPMENT ENDPOINTS
     # ==========================================
     path('machinery/', views.machinery_list, name='machinery_list'),
     path('machinery/<int:pk>/', views.machinery_detail, name='machinery_detail'),
 
-    # ==========================================
-    # SPARE PART ENDPOINTS
-    # ==========================================
-    path('spareparts/', views.sparepart_list, name='sparepart_list'),
-    path('spareparts/<int:pk>/', views.sparepart_detail, name='sparepart_detail'),
 
     # ==========================================
     # WORK ORDER ENDPOINTS

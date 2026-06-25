@@ -1,16 +1,17 @@
 <template>
     <div v-if="isDevelopment && showQuickLogin" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
         <p class="text-[13px] font-medium text-blue-900 mb-3">Quick Login (Development Only)</p>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             <Button
                 v-for="account in accounts"
                 :key="account.id"
                 type="button"
                 @click="quickLogin(account)"
                 :disabled="isLoading"
-                class="h-[40px] text-[12px] bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                class="h-auto py-2 text-[11px] bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex flex-col items-center justify-center text-center"
             >
-                {{ account.role }}
+                <span class="font-bold">{{ account.role }}</span>
+                <span class="text-[9px] opacity-80 font-normal mt-0.5">{{ account.description }}</span>
             </Button>
         </div>
     </div>
@@ -39,13 +40,10 @@ onMounted(async () => {
             const response = await fetch(DEV_ENDPOINT);
             if (response.ok) {
                 const data = await response.json();
-                accounts.value = [
-                    { id: 'admin', ...data.accounts.admin },
-                    { id: 'hr_staff', ...data.accounts.hr_staff },
-                    { id: 'safety_officer', ...data.accounts.safety_officer },
-                    { id: 'chief_engineer', ...data.accounts.chief_engineer },
-                    { id: 'worker', ...data.accounts.worker }
-                ];
+                accounts.value = Object.entries(data.accounts).map(([key, account]) => ({
+                    id: key,
+                    ...account
+                }));
                 showQuickLogin.value = true;
             }
         } catch (err) {

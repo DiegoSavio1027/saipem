@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Vessel, Asset, MachineryEquipment, SparePart, WorkOrder, MaintenanceTask, InventoryItem
+from .models import Vessel, Asset, MachineryEquipment, WorkOrder, MaintenanceTask, InventoryItem
 
 
 @admin.register(Vessel)
@@ -29,13 +29,7 @@ class MachineryEquipmentAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at']
 
 
-@admin.register(SparePart)
-class SparePartAdmin(admin.ModelAdmin):
-    list_display = ['id', 'vessel', 'part_name', 'part_number', 'quantity_on_hand', 'reorder_level', 'low_stock']
-    list_filter = ['vessel', 'supplier']
-    search_fields = ['part_name', 'part_number']
-    ordering = ['-created_at']
-    readonly_fields = ['created_at']
+
 
 
 @admin.register(WorkOrder)
@@ -58,7 +52,7 @@ class MaintenanceTaskAdmin(admin.ModelAdmin):
 
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ['item_code', 'item_name', 'category', 'current_stock', 'minimum_stock', 'asset_location']
-    list_filter = ['category', 'asset_location']
-    search_fields = ['item_code', 'item_name']
+    list_display = ['item_code', 'item_name', 'category', 'vessel', 'current_stock', 'quantity_reserved', 'minimum_stock']
+    list_filter = ['category', 'vessel', 'asset_location']
+    search_fields = ['item_code', 'item_name', 'supplier']
     ordering = ['item_name']

@@ -81,17 +81,6 @@
           </CardContent>
         </Card>
 
-        <!-- Low Stock Spare Parts -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" :class="lowStockSparepartsCount > 0 ? 'border-red-200 dark:border-red-900 bg-red-50/5' : ''" @click="router.push('/assets/spareparts')">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Part Alerts</CardTitle>
-            <Settings class="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-3xl font-black text-slate-900 dark:text-white" :class="lowStockSparepartsCount > 0 ? 'text-red-600 dark:text-red-400' : ''">{{ lowStockSparepartsCount }}</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Machine parts need reorder</p>
-          </CardContent>
-        </Card>
       </div>
 
       <div v-if="!isLoading" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -211,7 +200,6 @@ const isLoading = ref(true);
 const assets = ref([]);
 const workOrders = ref([]);
 const inventory = ref([]);
-const spareparts = ref([]);
 
 const fetchDashboardData = async () => {
   isLoading.value = true;
@@ -239,12 +227,6 @@ const fetchDashboardData = async () => {
     const invResponse = await fetch(`${API_BASE_URL}/asset/inventory/`, { headers });
     if (invResponse.ok) {
       inventory.value = await invResponse.json();
-    }
-
-    // Fetch spareparts
-    const spResponse = await fetch(`${API_BASE_URL}/asset/spareparts/${queryString}`, { headers });
-    if (spResponse.ok) {
-      spareparts.value = await spResponse.json();
     }
   } catch (error) {
     console.error('Failed to fetch Assets Dashboard data:', error);
@@ -280,10 +262,6 @@ const activeWorkOrdersCount = computed(() => {
 
 const lowStockInventoryCount = computed(() => {
   return inventory.value.filter(i => i.current_stock <= i.minimum_stock).length;
-});
-
-const lowStockSparepartsCount = computed(() => {
-  return spareparts.value.filter(s => s.quantity_on_hand <= s.reorder_level).length;
 });
 
 const criticalAssets = computed(() => {

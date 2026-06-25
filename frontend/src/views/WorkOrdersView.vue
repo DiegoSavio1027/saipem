@@ -26,6 +26,7 @@
               <tr>
                 <th scope="col" class="px-6 py-3">WO ID</th>
                 <th scope="col" class="px-6 py-3">Description</th>
+                <th scope="col" class="px-6 py-3">Assigned To</th>
                 <th scope="col" class="px-6 py-3">Vessel</th>
                 <th scope="col" class="px-6 py-3">Target Asset/Machine</th>
                 <th scope="col" class="px-6 py-3">Priority</th>
@@ -41,6 +42,7 @@
               <tr v-for="wo in paginatedWorkOrders" :key="wo.wo_id" class="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-850 transition">
                 <td class="px-6 py-4 font-bold text-slate-900 dark:text-white">{{ wo.wo_id }}</td>
                 <td class="px-6 py-4 font-sans text-slate-700 dark:text-slate-300">{{ truncate(wo.description) }}</td>
+                <td class="px-6 py-4 font-bold text-[var(--color-saipem-tertiary)]">{{ wo.assigned_to_name || 'Unassigned' }}</td>
                 <td class="px-6 py-4">{{ wo.vessel_name || wo.vessel }}</td>
                 <td class="px-6 py-4">
                   <span v-if="wo.machinery_name" class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
@@ -128,6 +130,14 @@
               <option v-for="v in vessels" :key="v.vessel_id" :value="v.vessel_id">{{ v.vessel_name }}</option>
             </select>
           </div>
+          <div>
+            <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Assign To (Lead Worker)</label>
+            <select v-model="woForm.assigned_to" :disabled="!woForm.vessel || isFetchingEmployees"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)] disabled:opacity-60 disabled:cursor-not-allowed">
+              <option value="" disabled>{{ !woForm.vessel ? 'Select Vessel First' : (isFetchingEmployees ? 'Loading...' : 'Select Assignee') }}</option>
+              <option v-for="emp in assignableWorkers" :key="emp.emp_id" :value="emp.emp_id">{{ emp.full_name }} ({{ emp.job_role }})</option>
+            </select>
+          </div>
 
           <!-- Optional targets -->
           <div class="grid grid-cols-2 gap-4">
@@ -203,11 +213,11 @@
 
             <div class="grid grid-cols-12 gap-2 items-end bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
               <div class="col-span-7">
-                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Spare Part</label>
+                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Inventory Item</label>
                 <select v-model="materialForm.spare_part_id" class="w-full px-2 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-[var(--color-saipem-tertiary)]">
-                  <option value="" disabled>Select Part</option>
-                  <option v-for="sp in allSpareParts" :key="sp.id" :value="sp.id" :disabled="sp.quantity_on_hand <= 0">
-                    {{ sp.part_name }} (Stock: {{ sp.quantity_on_hand }})
+                  <option value="" disabled>Select Item</option>
+                  <option v-for="sp in allInventoryItems" :key="sp.item_code" :value="sp.item_code" :disabled="sp.available_stock <= 0">
+                    {{ sp.item_name }} (Avail: {{ sp.available_stock }}, Rsvd: {{ sp.quantity_reserved }})
                   </option>
                 </select>
               </div>
@@ -251,7 +261,9 @@ const workOrders = ref([])
 const vessels = ref([])
 const allAssets = ref([])
 const allMachinery = ref([])
-const allSpareParts = ref([])
+const allInventoryItems = ref([])
+const vesselEmployees = ref([])
+const isFetchingEmployees = ref(false)
 const showWoModal = ref(false)
 const isEditMode = ref(false)
 
@@ -264,6 +276,7 @@ const woForm = ref({
   priority: 'MEDIUM',
   scheduled_date: new Date().toISOString().split('T')[0],
   status: 'PENDING',
+  assigned_to: '',
   created_by: authState.username || 'Admin',
   materials: []
 })
@@ -284,11 +297,19 @@ const filteredMachinery = computed(() => {
   return allMachinery.value.filter(m => m.vessel === woForm.value.vessel || m.vessel_id === woForm.value.vessel)
 })
 
+const assignableWorkers = computed(() => {
+  return vesselEmployees.value.filter(emp => !['Chief Engineer', 'Safety Officer'].includes(emp.job_role))
+})
+
 const fetchWorkOrders = async () => {
   isLoading.value = true
   try {
     const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-    const woResponse = await fetch(`${API_BASE_URL}/asset/workorders/`, { headers })
+    let url = `${API_BASE_URL}/asset/workorders/`
+    if (authState.userRole === 'Worker') {
+      url += `?assigned_to=${authState.empId}`
+    }
+    const woResponse = await fetch(url, { headers })
     if (woResponse.ok) {
       workOrders.value = await woResponse.json()
     }
@@ -318,15 +339,48 @@ const fetchAssetsAndMachinery = async () => {
     const [assetRes, macRes, spareRes] = await Promise.all([
       fetch(`${API_BASE_URL}/asset/assets/`, { headers }),
       fetch(`${API_BASE_URL}/asset/machinery/`, { headers }),
-      fetch(`${API_BASE_URL}/asset/spareparts/`, { headers })
+      fetch(`${API_BASE_URL}/asset/inventory/`, { headers })
     ])
     if (assetRes.ok) allAssets.value = await assetRes.json()
     if (macRes.ok) allMachinery.value = await macRes.json()
-    if (spareRes.ok) allSpareParts.value = await spareRes.json()
+    if (spareRes.ok) {
+      const allItems = await spareRes.json()
+      // Only show items that are 'Spare Part' or relevant for work orders
+      allInventoryItems.value = allItems.filter(item => item.category !== 'General')
+    }
   } catch (error) {
-    console.error("Error fetching assets/machinery:", error)
+    console.error("Error fetching dependencies:", error)
   }
 }
+
+const fetchVesselEmployees = async (vesselId) => {
+  if (!vesselId) {
+    vesselEmployees.value = []
+    return
+  }
+  isFetchingEmployees.value = true
+  try {
+    const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+    const response = await fetch(`${API_BASE_URL}/hse/employees/?vessel_id=${vesselId}`, { headers })
+    if (response.ok) {
+      vesselEmployees.value = await response.json()
+      // Optional: Check if current assigned_to is still valid
+      if (woForm.value.assigned_to && !vesselEmployees.value.some(e => e.emp_id === woForm.value.assigned_to)) {
+          woForm.value.assigned_to = ''
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching employees for vessel:', error)
+  } finally {
+    isFetchingEmployees.value = false
+  }
+}
+
+watch(() => woForm.value.vessel, (newVessel) => {
+  if (showWoModal.value) {
+      fetchVesselEmployees(newVessel)
+  }
+})
 
 const openWoModal = () => {
   isEditMode.value = false
@@ -339,10 +393,12 @@ const openWoModal = () => {
     priority: 'MEDIUM',
     scheduled_date: new Date().toISOString().split('T')[0],
     status: 'PENDING',
+    assigned_to: '',
     created_by: authState.username || 'Admin',
     materials: []
   }
   showWoModal.value = true
+  if (woForm.value.vessel) fetchVesselEmployees(woForm.value.vessel)
 }
 
 const openEditModal = (wo) => {
@@ -356,10 +412,12 @@ const openEditModal = (wo) => {
     priority: wo.priority,
     scheduled_date: wo.scheduled_date,
     status: wo.status,
+    assigned_to: wo.assigned_to || '',
     created_by: wo.created_by || authState.username || 'Admin',
     materials: wo.materials || []
   }
   showWoModal.value = true
+  if (woForm.value.vessel) fetchVesselEmployees(woForm.value.vessel)
 }
 
 const addMaterialToWo = async () => {
@@ -381,9 +439,12 @@ const addMaterialToWo = async () => {
       toast.success('Material added and stock deducted automatically!')
       materialForm.value = { spare_part_id: '', quantity_used: 1 }
       fetchWorkOrders() // update list in background
-      // Refresh spare parts to show updated stock
-      const spareRes = await fetch(`${API_BASE_URL}/asset/spareparts/`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } })
-      if (spareRes.ok) allSpareParts.value = await spareRes.json()
+      // Refresh inventory items to show updated stock
+      const spareRes = await fetch(`${API_BASE_URL}/asset/inventory/`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } })
+      if (spareRes.ok) {
+        const allItems = await spareRes.json()
+        allInventoryItems.value = allItems.filter(item => item.category !== 'General')
+      }
     } else {
       const err = await response.json()
       toast.error(err.error || 'Failed to add material')

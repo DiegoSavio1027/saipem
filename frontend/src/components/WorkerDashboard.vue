@@ -21,10 +21,6 @@
           </p>
         </div>
       </div>
-      <button @click="$emit('open-submit-modal')" class="w-full md:w-auto bg-[var(--color-saipem-tertiary)] hover:bg-[var(--color-saipem-tertiary)]/90 text-white px-6 py-3 rounded-lg font-semibold text-sm transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-        Submit New PTW
-      </button>
     </div>
 
     <!-- Quick KPI Stats Cards -->

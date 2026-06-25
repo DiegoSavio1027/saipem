@@ -45,6 +45,8 @@ class Asset(models.Model):
     icon = models.CharField(max_length=100, default="fa-ship text-red-500")
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="OPERATIONAL")
     health_score = models.IntegerField(default=100)  # 0-100%
+    current_vibration = models.DecimalField(max_digits=5, decimal_places=2, default=2.00)
+    current_temperature = models.DecimalField(max_digits=5, decimal_places=2, default=45.00)
     last_inspected = models.DateField(auto_now=True)
     assigned_decks = models.ManyToManyField('hse_pob.WorkLocation', related_name='assigned_vessels', blank=True)
 
@@ -64,6 +66,8 @@ class MachineryEquipment(models.Model):
     serial_number = models.CharField(max_length=100, unique=True)
     installation_date = models.DateField()
     operating_hours = models.IntegerField(default=0)  # Total operating hours
+    current_vibration = models.DecimalField(max_digits=5, decimal_places=2, default=2.00)
+    current_temperature = models.DecimalField(max_digits=5, decimal_places=2, default=45.00)
     last_maintenance_date = models.DateField(null=True, blank=True)
     maintenance_interval_hours = models.IntegerField(default=1000)  # Hours between maintenance
     created_at = models.DateTimeField(auto_now_add=True)
@@ -83,27 +87,7 @@ class MachineryEquipment(models.Model):
 
 
 # ==========================================
-# SPARE PART MODEL (Inventory Management)
-# ==========================================
-class SparePart(models.Model):
-    """Spare parts inventory"""
-    id = models.AutoField(primary_key=True)
-    vessel = models.ForeignKey(Vessel, on_delete=models.CASCADE, related_name='spare_parts')
-    part_name = models.CharField(max_length=100)
-    part_number = models.CharField(max_length=100, unique=True)
-    quantity_on_hand = models.IntegerField(default=0)
-    reorder_level = models.IntegerField(default=5)  # Alert when stock below this
-    supplier = models.CharField(max_length=100, null=True, blank=True)
-    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.part_name} ({self.vessel.vessel_name})"
-
-    @property
-    def low_stock(self):
-        """Check if stock is low"""
-        return self.quantity_on_hand <= self.reorder_level
 
 
 # ==========================================
@@ -130,6 +114,7 @@ class WorkOrder(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.SET_NULL, null=True, blank=True, related_name='work_orders')
     machinery = models.ForeignKey(MachineryEquipment, on_delete=models.SET_NULL, null=True, blank=True, related_name='work_orders')
     created_by = models.CharField(max_length=100)  # Chief Engineer
+    assigned_to = models.ForeignKey('hr_module.Employee', on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_work_orders')
     description = models.TextField()
     priority = models.CharField(max_length=50, choices=PRIORITY_CHOICES, default='MEDIUM')
     scheduled_date = models.DateField()
@@ -145,15 +130,15 @@ class WorkOrder(models.Model):
 # WORK ORDER MATERIAL MODEL
 # ==========================================
 class WorkOrderMaterial(models.Model):
-    """Tracks spare parts used in a work order"""
+    """Tracks inventory items used in a work order"""
     id = models.AutoField(primary_key=True)
     work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='materials')
-    spare_part = models.ForeignKey(SparePart, on_delete=models.CASCADE)
+    inventory_item = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True)
     quantity_used = models.IntegerField(default=1)
     added_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.quantity_used}x {self.spare_part.part_name} for {self.work_order.wo_id}"
+        return f"{self.quantity_used}x {self.inventory_item.item_name} for {self.work_order.wo_id}"
 
 
 
@@ -195,13 +180,47 @@ class MaintenanceTask(models.Model):
 # INVENTORY ITEM MODEL
 # ==========================================
 class InventoryItem(models.Model):
-    """Inventory items"""
+    """Unified inventory system for spare parts, consumables, tools, etc."""
     item_code = models.CharField(max_length=50, primary_key=True)
     item_name = models.CharField(max_length=100)
     category = models.CharField(max_length=100, default="Spare Part")
+    vessel = models.ForeignKey('Vessel', on_delete=models.CASCADE, related_name='inventory', null=True, blank=True)
     current_stock = models.IntegerField(default=0)
+    quantity_reserved = models.IntegerField(default=0)
     minimum_stock = models.IntegerField(default=10)
-    asset_location = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='inventory', null=True, blank=True)
+    asset_location = models.ForeignKey('Asset', on_delete=models.CASCADE, related_name='inventory', null=True, blank=True)
+    supplier = models.CharField(max_length=100, null=True, blank=True)
+    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
-        return self.item_name
+        return f"{self.item_code} - {self.item_name}"
+
+    @property
+    def available_stock(self):
+        """Calculate available stock (on hand - reserved)"""
+        return max(0, self.current_stock - self.quantity_reserved)
+
+    @property
+    def low_stock(self):
+        """Check if stock is low"""
+        return self.available_stock <= self.minimum_stock
+
+
+# ==========================================
+# TELEMETRY LOG MODEL (IoT History)
+# ==========================================
+class TelemetryLog(models.Model):
+    """Historical telemetry data representing IoT sensor readings"""
+    id = models.AutoField(primary_key=True)
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='telemetry_logs', null=True, blank=True)
+    machinery = models.ForeignKey(MachineryEquipment, on_delete=models.CASCADE, related_name='telemetry_logs', null=True, blank=True)
+    vibration = models.DecimalField(max_digits=5, decimal_places=2)
+    temperature = models.DecimalField(max_digits=5, decimal_places=2)
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        target = self.asset.name if self.asset else self.machinery.equipment_name
+        return f"{target} telemetry at {self.timestamp}"

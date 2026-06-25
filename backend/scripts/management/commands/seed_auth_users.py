@@ -86,6 +86,17 @@ class Command(BaseCommand):
                 'job_role': 'Safety Officer',
                 'roster_status': 'ONBOARD'
             },
+            {
+                'username': 'worker_off',
+                'password': 'worker123',
+                'email': 'workeroff@saipem.com',
+                'first_name': 'Raf',
+                'last_name': 'Simons',
+                'is_superuser': False,
+                'group': 'Worker',
+                'job_role': 'Worker',
+                'roster_status': 'AVAILABLE'
+            },
         ]
 
         for user_data in test_users:

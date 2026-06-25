@@ -122,29 +122,35 @@ def dev_quick_login_accounts(request):
             "role": "Admin",
             "description": "Administrator account"
         },
-        "hr_staff": {
-            "username": os.getenv('DEV_HR_STAFF_USERNAME', 'hr_staff'),
-            "password": os.getenv('DEV_HR_STAFF_PASSWORD', 'hr123'),
-            "role": "HR Staff",
-            "description": "HR Staff - HR Manager"
+        "chief_engineer": {
+            "username": os.getenv('DEV_CHIEF_ENGINEER_USERNAME', 'chief_engineer'),
+            "password": os.getenv('DEV_CHIEF_ENGINEER_PASSWORD', 'chief123'),
+            "role": "Chief Engineer",
+            "description": "Chief Engineer (On Roster: Saipem 7000)"
+        },
+        "worker_onboard": {
+            "username": os.getenv('DEV_WORKER_USERNAME', 'worker'),
+            "password": os.getenv('DEV_WORKER_PASSWORD', 'worker123'),
+            "role": "Worker",
+            "description": "Worker (On Roster: Saipem 7000)"
+        },
+        "worker_off_roster": {
+            "username": 'EMP-007',
+            "password": 'saipem123',
+            "role": "Worker",
+            "description": "Worker (Off Roster / Available)"
         },
         "safety_officer": {
             "username": os.getenv('DEV_SAFETY_OFFICER_USERNAME', 'safety_officer'),
             "password": os.getenv('DEV_SAFETY_OFFICER_PASSWORD', 'safety123'),
             "role": "Safety Officer",
-            "description": "Safety Officer - HSE Officer"
+            "description": "Safety Officer (On Roster: Saipem 7000)"
         },
-        "chief_engineer": {
-            "username": os.getenv('DEV_CHIEF_ENGINEER_USERNAME', 'chief_engineer'),
-            "password": os.getenv('DEV_CHIEF_ENGINEER_PASSWORD', 'chief123'),
-            "role": "Chief Engineer",
-            "description": "Chief Engineer - Engineering Chief"
-        },
-        "worker": {
-            "username": os.getenv('DEV_WORKER_USERNAME', 'worker'),
-            "password": os.getenv('DEV_WORKER_PASSWORD', 'worker123'),
-            "role": "Worker",
-            "description": "Field Worker - Mechanical Technician"
+        "hr_staff": {
+            "username": os.getenv('DEV_HR_STAFF_USERNAME', 'hr_staff'),
+            "password": os.getenv('DEV_HR_STAFF_PASSWORD', 'hr123'),
+            "role": "HR Staff",
+            "description": "HR Staff - HR Manager"
         }
     }
 
