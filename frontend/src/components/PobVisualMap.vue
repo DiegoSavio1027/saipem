@@ -218,7 +218,8 @@ const locations = computed(() => {
 
   // Initialize locations from API
   apiLocations.value.forEach(loc => {
-    locationMap.set(loc.name, { name: loc.name, count: 0, personnel: [] });
+    const locName = loc.deck_name || loc.name;
+    locationMap.set(locName, { name: locName, count: 0, personnel: [] });
   });
 
   // Count current personnel in each location (only IN actions)
@@ -227,7 +228,8 @@ const locations = computed(() => {
   // Process feeds in chronological order (oldest first)
   // Filter out EMERGENCY feeds
   const sortedFeeds = [...props.liveFeeds]
-    .filter(feed => feed.action === 'IN' || feed.action === 'OUT');
+    .filter(feed => feed.action === 'IN' || feed.action === 'OUT')
+    .reverse();
 
   sortedFeeds.forEach(feed => {
     const key = feed.employee_name;

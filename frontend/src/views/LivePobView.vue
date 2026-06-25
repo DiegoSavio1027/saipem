@@ -86,24 +86,32 @@ const fetchInitialPob = async () => {
     }
     
     const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${authState.token}`
-      },
       credentials: 'include'
     });
     
     if (response.ok) {
       const data = await response.json();
       
-      if (websocketState.liveFeeds.length === 0) {
-        websocketState.liveFeeds = data.map(log => ({
-          action: log.action,
-          employee_name: log.employee_name,
-          location: log.location_name || (typeof log.deck_location === 'object' ? log.deck_location.deck_name : log.deck_location),
-          time: new Date(log.timestamp).toLocaleString(),
-          timestamp: log.timestamp
-        }));
-      }
+      const formattedData = data.map(log => ({
+        action: log.action,
+        employee_name: log.employee_name,
+        location: log.location_name || (typeof log.deck_location === 'object' ? log.deck_location.deck_name : log.deck_location),
+        time: new Date(log.timestamp).toLocaleString(),
+        timestamp: log.timestamp
+      }));
+
+      // Append fetched data that doesn't already exist from websocket
+      formattedData.forEach(newFeed => {
+        const isDuplicate = websocketState.liveFeeds.some(feed =>
+            feed.employee_name === newFeed.employee_name &&
+            feed.action === newFeed.action &&
+            feed.location === newFeed.location &&
+            feed.timestamp === newFeed.timestamp
+        );
+        if (!isDuplicate) {
+          websocketState.liveFeeds.push(newFeed);
+        }
+      });
     }
   } catch (error) {
     console.error('Failed to fetch initial POB data:', error);

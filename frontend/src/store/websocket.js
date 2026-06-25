@@ -35,7 +35,6 @@ export const initializeWebSocket = () => {
 
     websocketState.socket.onopen = () => {
         websocketState.isConnected = true;
-        websocketState.liveFeeds = [];
     };
 
     websocketState.socket.onmessage = (e) => {
