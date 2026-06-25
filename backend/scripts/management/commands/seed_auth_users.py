@@ -32,6 +32,51 @@ class Command(BaseCommand):
         self.stdout.write('\n[2/5] Creating Users and Profiles...')
         test_users = [
             {
+                'username': 'chief_engineer_hq',
+                'password': 'chief123',
+                'email': 'chief_hq@saipem.com',
+                'first_name': 'Johan',
+                'last_name': 'HQ',
+                'is_superuser': False,
+                'group': 'Chief Engineer',
+                'job_role': 'Chief Engineer',
+                'roster_status': 'AVAILABLE'
+            },
+            {
+                'username': 'chief_engineer_castorone',
+                'password': 'chief123',
+                'email': 'chief_castorone@saipem.com',
+                'first_name': 'Johan',
+                'last_name': 'Castorone',
+                'is_superuser': False,
+                'group': 'Chief Engineer',
+                'job_role': 'Chief Engineer',
+                'roster_status': 'ONBOARD'
+            },
+            {
+                'username': 'safety_officer_hq',
+                'password': 'safety123',
+                'email': 'safety_hq@saipem.com',
+                'first_name': 'Diego',
+                'last_name': 'HQ',
+                'is_superuser': False,
+                'group': 'Safety Officer',
+                'job_role': 'Safety Officer',
+                'roster_status': 'AVAILABLE'
+            },
+            {
+                'username': 'safety_officer_castorone',
+                'password': 'safety123',
+                'email': 'safety_castorone@saipem.com',
+                'first_name': 'Diego',
+                'last_name': 'Castorone',
+                'is_superuser': False,
+                'group': 'Safety Officer',
+                'job_role': 'Safety Officer',
+                'roster_status': 'ONBOARD'
+            },
+
+            {
                 'username': 'admin',
                 'password': 'admin123',
                 'email': 'admin@saipem.com',
@@ -54,7 +99,7 @@ class Command(BaseCommand):
                 'roster_status': 'AVAILABLE'
             },
             {
-                'username': 'chief_engineer',
+                'username': 'chief_engineer_s7000',
                 'password': 'chief123',
                 'email': 'chief@saipem.com',
                 'first_name': 'Johan',
@@ -76,7 +121,7 @@ class Command(BaseCommand):
                 'roster_status': 'ONBOARD'
             },
             {
-                'username': 'safety_officer',
+                'username': 'safety_officer_s7000',
                 'password': 'safety123',
                 'email': 'safety@saipem.com',
                 'first_name': 'Diego',

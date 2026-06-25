@@ -20,7 +20,44 @@ class Command(BaseCommand):
         self.stdout.write("\n[1/8] Creating Employees...")
         employees_data = [
             {
-                'emp_id': 'chief_engineer',
+                'emp_id': 'chief_engineer_hq',
+                'full_name': 'Johan HQ',
+                'job_role': 'Chief Engineer',
+                'mcu_status': 'FIT',
+                'mcu_expiry': date(2027, 12, 31),
+                'roster_status': 'AVAILABLE',
+                'email': 'chief_hq@saipem.com'
+            },
+            {
+                'emp_id': 'chief_engineer_castorone',
+                'full_name': 'Johan Castorone',
+                'job_role': 'Chief Engineer',
+                'mcu_status': 'FIT',
+                'mcu_expiry': date(2027, 12, 31),
+                'roster_status': 'ONBOARD',
+                'email': 'chief_castorone@saipem.com'
+            },
+            {
+                'emp_id': 'safety_officer_hq',
+                'full_name': 'Diego HQ',
+                'job_role': 'Safety Officer',
+                'mcu_status': 'FIT',
+                'mcu_expiry': date(2027, 6, 30),
+                'roster_status': 'AVAILABLE',
+                'email': 'safety_hq@saipem.com'
+            },
+            {
+                'emp_id': 'safety_officer_castorone',
+                'full_name': 'Diego Castorone',
+                'job_role': 'Safety Officer',
+                'mcu_status': 'FIT',
+                'mcu_expiry': date(2027, 6, 30),
+                'roster_status': 'ONBOARD',
+                'email': 'safety_castorone@saipem.com'
+            },
+
+            {
+                'emp_id': 'chief_engineer_s7000',
                 'full_name': 'Johan Branson',
                 'job_role': 'Chief Engineer',
                 'mcu_status': 'FIT',
@@ -29,7 +66,7 @@ class Command(BaseCommand):
                 'email': 'chief@saipem.com'
             },
             {
-                'emp_id': 'safety_officer',
+                'emp_id': 'safety_officer_s7000',
                 'full_name': 'Diego Savio',
                 'job_role': 'Safety Officer',
                 'mcu_status': 'FIT',
@@ -102,11 +139,16 @@ class Command(BaseCommand):
         }
 
         password_mapping = {
+            'chief_engineer_hq': 'chief123',
+            'chief_engineer_castorone': 'chief123',
+            'safety_officer_hq': 'safety123',
+            'safety_officer_castorone': 'safety123',
+
             'admin': 'admin123',
             'hr_staff': 'hr123',
-            'chief_engineer': 'chief123',
+            'chief_engineer_s7000': 'chief123',
             'worker': 'worker123',
-            'safety_officer': 'safety123',
+            'safety_officer_s7000': 'safety123',
         }
 
         for emp_data in employees_data:
@@ -418,7 +460,20 @@ class Command(BaseCommand):
         today_date = date.today()
         rosters_data = [
             {
-                'emp_id': 'chief_engineer',
+                'emp_id': 'chief_engineer_castorone',
+                'vessel_name': 'Castorone',
+                'start_date': today_date - timedelta(days=15),
+                'end_date': today_date + timedelta(days=30)
+            },
+            {
+                'emp_id': 'safety_officer_castorone',
+                'vessel_name': 'Castorone',
+                'start_date': today_date - timedelta(days=15),
+                'end_date': today_date + timedelta(days=30)
+            },
+
+            {
+                'emp_id': 'chief_engineer_s7000',
                 'vessel_name': 'Saipem 7000',
                 'start_date': today_date - timedelta(days=15),
                 'end_date': today_date + timedelta(days=30)
@@ -436,7 +491,7 @@ class Command(BaseCommand):
                 'end_date': today_date + timedelta(days=30)
             },
             {
-                'emp_id': 'safety_officer',
+                'emp_id': 'safety_officer_s7000',
                 'vessel_name': 'Saipem 7000',
                 'start_date': today_date - timedelta(days=15),
                 'end_date': today_date + timedelta(days=30)
@@ -587,7 +642,7 @@ class Command(BaseCommand):
                 'scheduled_date': date(2026, 6, 1),
                 'status': 'PENDING',
                 'priority': 'CRITICAL',
-                'assigned_crew_id': 'chief_engineer'
+                'assigned_crew_id': 'chief_engineer_s7000'
             },
             {
                 'task_id': 'MT-002',
@@ -614,7 +669,7 @@ class Command(BaseCommand):
                 'scheduled_date': date(2026, 6, 15),
                 'status': 'PENDING',
                 'priority': 'CRITICAL',
-                'assigned_crew_id': 'safety_officer'
+                'assigned_crew_id': 'safety_officer_s7000'
             }
         ]
 
@@ -779,7 +834,7 @@ class Command(BaseCommand):
                 'priority': 'MEDIUM',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=1),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-002',
@@ -790,7 +845,7 @@ class Command(BaseCommand):
                 'priority': 'MEDIUM',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=2),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-003',
@@ -801,7 +856,7 @@ class Command(BaseCommand):
                 'priority': 'HIGH',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=3),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-004',
@@ -812,7 +867,7 @@ class Command(BaseCommand):
                 'priority': 'HIGH',
                 'status': 'IN_PROGRESS',
                 'scheduled_date': date.today() + timedelta(days=1),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-005',
@@ -823,7 +878,7 @@ class Command(BaseCommand):
                 'priority': 'MEDIUM',
                 'status': 'IN_PROGRESS',
                 'scheduled_date': date.today(),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-006',
@@ -834,7 +889,7 @@ class Command(BaseCommand):
                 'priority': 'CRITICAL',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=5),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-007',
@@ -845,7 +900,7 @@ class Command(BaseCommand):
                 'priority': 'MEDIUM',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=4),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-008',
@@ -856,7 +911,7 @@ class Command(BaseCommand):
                 'priority': 'CRITICAL',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=6),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-009',
@@ -867,7 +922,7 @@ class Command(BaseCommand):
                 'priority': 'HIGH',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=7),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-010',
@@ -878,7 +933,7 @@ class Command(BaseCommand):
                 'priority': 'MEDIUM',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=3),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             # Castorone
             {
@@ -890,7 +945,7 @@ class Command(BaseCommand):
                 'priority': 'HIGH',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=1),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-012',
@@ -901,7 +956,7 @@ class Command(BaseCommand):
                 'priority': 'CRITICAL',
                 'status': 'IN_PROGRESS',
                 'scheduled_date': date.today(),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             # Scarabeo 8
             {
@@ -913,7 +968,7 @@ class Command(BaseCommand):
                 'priority': 'CRITICAL',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=2),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-014',
@@ -924,7 +979,7 @@ class Command(BaseCommand):
                 'priority': 'HIGH',
                 'status': 'IN_PROGRESS',
                 'scheduled_date': date.today(),
-                'created_by': 'chief_engineer'
+                'created_by': 'chief_engineer_s7000'
             }
         ]
 

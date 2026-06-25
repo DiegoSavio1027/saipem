@@ -61,12 +61,12 @@ export const checkAuth = async () => {
             authState.accessibleModules = data.accessible_modules || [];
             authState.assignedVessel = data.assigned_vessel || null;
 
-            // For Admin, initialize selectedVessel from localStorage or default to null
-            if (data.role === 'Admin') {
+            // If no assigned vessel (Admin or HQ), initialize selectedVessel from localStorage
+            if (!data.assigned_vessel) {
                 const savedVessel = localStorage.getItem('hse-selected-vessel');
                 authState.selectedVessel = savedVessel ? JSON.parse(savedVessel) : null;
             } else {
-                // Non-Admin: selectedVessel = assignedVessel
+                // Assigned user: selectedVessel is locked to assignedVessel
                 authState.selectedVessel = authState.assignedVessel;
             }
 
@@ -100,12 +100,12 @@ export const setAuthData = (data) => {
     authState.accessibleModules = data.accessible_modules || [];
     authState.assignedVessel = data.assigned_vessel || null;
 
-    // For Admin, initialize selectedVessel from localStorage or default to null
-    if (data.role === 'Admin') {
+    // If no assigned vessel (Admin or HQ), initialize selectedVessel from localStorage
+    if (!data.assigned_vessel) {
         const savedVessel = localStorage.getItem('hse-selected-vessel');
         authState.selectedVessel = savedVessel ? JSON.parse(savedVessel) : null;
     } else {
-        // Non-Admin: selectedVessel = assignedVessel
+        // Assigned user: selectedVessel is locked to assignedVessel
         authState.selectedVessel = authState.assignedVessel;
     }
 
@@ -118,7 +118,7 @@ export const setAuthData = (data) => {
 // Set selected vessel (Admin only)
 export const setSelectedVessel = (vessel) => {
     authState.selectedVessel = vessel;
-    if (authState.userRole === 'Admin') {
+    if (!authState.assignedVessel) {
         localStorage.setItem('hse-selected-vessel', JSON.stringify(vessel));
     }
 };
