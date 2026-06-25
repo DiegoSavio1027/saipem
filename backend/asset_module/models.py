@@ -45,8 +45,6 @@ class Asset(models.Model):
     icon = models.CharField(max_length=100, default="fa-ship text-red-500")
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="OPERATIONAL")
     health_score = models.IntegerField(default=100)  # 0-100%
-    current_vibration = models.DecimalField(max_digits=5, decimal_places=2, default=2.00)
-    current_temperature = models.DecimalField(max_digits=5, decimal_places=2, default=45.00)
     last_inspected = models.DateField(auto_now=True)
     assigned_decks = models.ManyToManyField('hse_pob.WorkLocation', related_name='assigned_vessels', blank=True)
 

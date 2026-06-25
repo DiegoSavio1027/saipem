@@ -124,10 +124,6 @@
                     <span class="text-slate-400">Health Index</span>
                     <span :class="asset.health_score > 70 ? 'text-green-500' : 'text-red-500'" class="font-bold">{{ asset.health_score }}%</span>
                   </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-400">Temp / Vibration</span>
-                    <span class="text-slate-700 dark:text-slate-300 font-bold">{{ asset.temperature }}°C / {{ asset.vibration }}mm/s</span>
-                  </div>
                 </div>
               </li>
             </ul>
@@ -316,9 +312,7 @@ const criticalAssets = computed(() => {
     name: m.equipment_name,
     vessel_name: m.vessel_name,
     status: m.needs_maintenance ? 'MAINTENANCE' : 'WARNING',
-    health_score: Math.round(m.health_percentage || 50),
-    temperature: m.temperature,
-    vibration: m.vibration
+    health_score: Math.round(m.health_percentage || 50)
   }));
 
   const criticalFromInventory = inventory.value.filter(i => i.status === 'CRITICAL' || i.status === 'MAINTENANCE' || i.health_score < 80).map(i => ({
@@ -326,9 +320,7 @@ const criticalAssets = computed(() => {
     name: i.name,
     vessel_name: i.vessel_name || i.vessel,
     status: i.status,
-    health_score: Math.round(i.health_score || 50),
-    temperature: '-',
-    vibration: '-'
+    health_score: Math.round(i.health_score || 50)
   }));
 
   return [...criticalFromAssets, ...criticalFromMachinery, ...criticalFromInventory];

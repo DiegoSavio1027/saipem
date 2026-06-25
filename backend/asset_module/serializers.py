@@ -24,10 +24,8 @@ class VesselSerializer(serializers.ModelSerializer):
 # ==========================================
 class AssetSerializer(serializers.ModelSerializer):
     vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
-    vibration = serializers.DecimalField(source='current_vibration', max_digits=5, decimal_places=2, read_only=True)
-    temperature = serializers.DecimalField(source='current_temperature', max_digits=5, decimal_places=2, read_only=True)
     machinery_count = serializers.IntegerField(source='machinery_equipment.count', read_only=True)
-    rul_hours = serializers.SerializerMethodField()
+    health_score = serializers.SerializerMethodField()
     predicted_failure_date = serializers.SerializerMethodField()
     assigned_decks = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -47,20 +45,34 @@ class AssetSerializer(serializers.ModelSerializer):
         ]
         return representation
 
-
-
-    def get_rul_hours(self, obj):
-        if obj.status == 'CRITICAL':
-            return 12
-        elif obj.status == 'MAINTENANCE':
-            return 150
-        return 850
+    def get_health_score(self, obj):
+        machineries = obj.machinery_equipment.all()
+        if not machineries.exists():
+            return obj.health_score  # fallback to static if no machinery
+        
+        total_health = 0
+        for m in machineries:
+            if m.needs_maintenance:
+                total_health += 25
+            else:
+                total = m.maintenance_interval_hours
+                remaining = m.hours_until_maintenance
+                if total <= 0:
+                    total_health += 100
+                else:
+                    health = (remaining / total) * 100
+                    total_health += max(0, min(100, health))
+        return int(total_health / machineries.count())
 
     def get_predicted_failure_date(self, obj):
         import datetime
         from django.utils import timezone
-        rul_days = self.get_rul_hours(obj) / 24.0
-        predicted_date = timezone.now().date() + datetime.timedelta(days=rul_days)
+        machineries = obj.machinery_equipment.all()
+        if not machineries.exists():
+            return (timezone.now().date() + datetime.timedelta(days=365)).isoformat()
+        
+        min_rul_hours = min([m.hours_until_maintenance for m in machineries])
+        predicted_date = timezone.now().date() + datetime.timedelta(days=min_rul_hours / 24.0)
         return predicted_date.isoformat()
 
 
