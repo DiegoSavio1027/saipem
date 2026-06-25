@@ -23,8 +23,8 @@
             <span class="sm:hidden">Alarm</span>
         </Button>
 
-        <!-- Vessel Selector (HQ / Admin) -->
-        <DropdownMenu v-if="!authState.assignedVessel" :open="showVesselDropdown" @update:open="showVesselDropdown = $event">
+        <!-- Vessel Selector (HR / Admin) -->
+        <DropdownMenu v-if="authState.userRole === 'Admin' || authState.userRole === 'HR Staff'" :open="showVesselDropdown" @update:open="showVesselDropdown = $event">
             <DropdownMenuTrigger as-child>
                 <Button variant="outline" class="flex items-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm font-medium">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-[var(--color-saipem-tertiary)]">
@@ -55,8 +55,8 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-[var(--color-saipem-tertiary)] shrink-0">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
-            <span class="hidden sm:inline text-slate-900 dark:text-white">{{ authState.assignedVessel.name }}</span>
-            <span class="sm:hidden text-slate-900 dark:text-white">{{ authState.assignedVessel.name.substring(0, 3) }}</span>
+            <span class="hidden sm:inline text-slate-900 dark:text-white">{{ authState.assignedVessel?.name || 'Unassigned' }}</span>
+            <span class="sm:hidden text-slate-900 dark:text-white">{{ (authState.assignedVessel?.name || 'Unassigned').substring(0, 3) }}</span>
         </div>
 
         <Button @click="toggleTheme" variant="ghost" class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium text-xs md:text-sm transition-colors h-10 px-2 md:px-4">
