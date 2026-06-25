@@ -31,6 +31,7 @@
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700">Item Code</th>
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700">Item Name</th>
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700">Category</th>
+                <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700">Vessel</th>
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700 text-center">Current Stock</th>
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700 text-center">Reserved</th>
                 <th class="px-6 py-4 font-bold border-b border-slate-200 dark:border-slate-700 text-center">Unit Cost ($)</th>
@@ -46,6 +47,7 @@
                 <td class="px-6 py-4 font-mono text-slate-900 dark:text-slate-100 font-bold">{{ item.item_code }}</td>
                 <td class="px-6 py-4 text-slate-700 dark:text-slate-300">{{ item.item_name }}</td>
                 <td class="px-6 py-4 text-slate-500">{{ item.category }}</td>
+                <td class="px-6 py-4 text-slate-700 dark:text-slate-300">{{ item.vessel_name || '-' }}</td>
                 <td class="px-6 py-4 text-center">
                   <span class="font-mono text-lg font-bold" :class="item.current_stock <= item.minimum_stock ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'">
                     {{ item.current_stock }}
@@ -135,6 +137,14 @@
               />
             </div>
 
+            <div>
+              <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Vessel Assignment *</label>
+              <select v-model="formData.vessel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)]" required :disabled="!!authState.assignedVessel">
+                <option value="" disabled>Select Vessel</option>
+                <option v-for="v in vessels" :key="v.asset_id || v.vessel_id" :value="v.asset_id || v.vessel_id">{{ v.name || v.vessel_name }}</option>
+              </select>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Current Stock *</label>
@@ -208,6 +218,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989
 
 const isLoading = ref(false)
 const inventory = ref([])
+const vessels = ref([])
 const showModal = ref(false)
 const isEditMode = ref(false)
 
@@ -219,11 +230,25 @@ const formData = ref({
   item_code: '',
   item_name: '',
   category: 'Spare Part',
+  vessel: '',
   current_stock: 0,
   minimum_stock: 10,
   supplier: '',
   unit_cost: 0.00
 })
+
+const fetchVessels = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/offshore/vessels/`, {
+      headers: { 'Authorization': `Bearer ${getAccessToken()}` }
+    })
+    if (response.ok) {
+      vessels.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Error fetching vessels:', error)
+  }
+}
 
 const fetchInventory = async () => {
   isLoading.value = true
@@ -260,6 +285,7 @@ const openAddModal = () => {
     item_code: '',
     item_name: '',
     category: 'Consumable',
+    vessel: authState.assignedVessel ? authState.assignedVessel.asset_id : (authState.selectedVessel ? authState.selectedVessel.asset_id : ''),
     current_stock: 0,
     minimum_stock: 10,
     supplier: '',
@@ -282,6 +308,7 @@ const openEditModal = (item) => {
     item_code: item.item_code,
     item_name: item.item_name,
     category: item.category,
+    vessel: item.vessel || '',
     current_stock: item.current_stock,
     minimum_stock: item.minimum_stock,
     supplier: item.supplier || '',
@@ -347,6 +374,7 @@ const deleteItem = async (itemCode) => {
 }
 
 onMounted(() => {
+  fetchVessels()
   fetchInventory()
 })
 </script>
