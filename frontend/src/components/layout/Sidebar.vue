@@ -135,7 +135,7 @@
         <div v-else class="h-4 mb-2"></div>
 
         <!-- Asset Dashboard -->
-        <router-link to="/assets/dashboard" exact-active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Asset Dashboard' : ''">
+        <router-link to="/assets" exact-active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Asset Dashboard' : ''">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--color-saipem-tertiary)] shrink-0">
             <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
           </svg>
@@ -149,7 +149,7 @@
         </router-link>
 
         <!-- Asset Registry -->
-        <router-link to="/assets" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Asset Registry' : ''">
+        <router-link to="/assets/registry" active-class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100" :class="['flex items-center gap-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-md font-medium transition-colors', isCollapsed ? 'justify-center px-0' : 'px-3']" :title="isCollapsed ? 'Asset Registry' : ''">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           <span v-if="!isCollapsed">Asset Registry</span>
         </router-link>

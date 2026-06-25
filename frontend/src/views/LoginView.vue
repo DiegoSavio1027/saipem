@@ -18,7 +18,7 @@ const onLoginSuccess = (userData) => {
     } else if (userData.accessible_modules && userData.accessible_modules.includes('hr')) {
         router.push('/hr');
     } else if (userData.accessible_modules && userData.accessible_modules.includes('asset')) {
-        router.push('/assets/dashboard');
+        router.push('/assets');
     } else {
         router.push('/hse');
     }

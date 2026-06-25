@@ -97,13 +97,13 @@ const routes = [
     },
     // Asset Module Routes
     {
-        path: '/assets/dashboard',
+        path: '/assets',
         name: 'AssetsDashboard',
         component: () => import('@/views/AssetsDashboardView.vue'),
         meta: { requiresAuth: true, requiredModule: 'asset' }
     },
     {
-        path: '/assets',
+        path: '/assets/registry',
         name: 'Assets',
         component: () => import('@/views/AssetsView.vue'),
         meta: { requiresAuth: true, requiredModule: 'asset' }
@@ -144,7 +144,7 @@ function getDefaultRoute() {
         return '/hr';
     }
     if (authState.accessibleModules && authState.accessibleModules.includes('asset')) {
-        return '/assets/dashboard';
+        return '/assets';
     }
     if (authState.accessibleModules && authState.accessibleModules.includes('hse')) {
         return '/hse';
