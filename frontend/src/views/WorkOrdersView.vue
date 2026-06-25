@@ -134,8 +134,8 @@
           </div>
           <div>
             <label class="text-slate-400 font-bold uppercase tracking-wider block mb-1">Vessel *</label>
-            <select v-model="woForm.vessel" required
-              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)]">
+            <select v-model="woForm.vessel" required :disabled="!!authState.assignedVessel"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)] disabled:opacity-60 disabled:cursor-not-allowed">
               <option value="" disabled>Select Vessel</option>
               <option v-for="v in vessels" :key="v.vessel_id" :value="v.vessel_id">{{ v.vessel_name }}</option>
             </select>
@@ -467,9 +467,17 @@ watch(() => woForm.value.asset, () => {
 
 const openWoModal = () => {
   isEditMode.value = false
+  
+  const initialVessel = authState.assignedVessel?.asset_id 
+    || authState.selectedVessel?.asset_id 
+    || authState.assignedVessel?.vessel_id 
+    || authState.selectedVessel?.vessel_id 
+    || vessels.value[0]?.vessel_id 
+    || ''
+
   woForm.value = {
     wo_id: '',
-    vessel: vessels.value[0]?.vessel_id || '',
+    vessel: initialVessel,
     asset: '',
     machinery: '',
     description: '',
@@ -676,9 +684,12 @@ const performDeleteWo = async (id) => {
     if (response.ok || response.status === 204) {
       toast.success('Work Order deleted')
       fetchWorkOrders()
+    } else {
+      const err = await response.json()
+      toast.error('Failed to delete Work Order', { description: err.error || 'Unknown error' })
     }
   } catch (error) {
-    toast.error('Error deleting')
+    toast.error('Network error deleting Work Order')
   }
 }
 

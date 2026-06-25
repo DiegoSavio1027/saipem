@@ -229,8 +229,12 @@ def workorder_detail(request, wo_id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'DELETE':
-        workorder.delete()
-        return Response({"message": "Work order deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        from django.db.models import ProtectedError
+        try:
+            workorder.delete()
+            return Response({"message": "Work order deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError:
+            return Response({"error": "Cannot delete this Work Order because it is linked to one or more Permit to Work (PTW). Please cancel it instead."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
