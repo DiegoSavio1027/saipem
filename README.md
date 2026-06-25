@@ -211,13 +211,11 @@ Manajemen Lokasi (Deck/Area) dan penghubungan ke Kapal Utama.
 - `GET /assets/<asset_id>/` - Detail *Asset*
 - `GET /machinery/` - Peralatan mesin yang terpasang pada *Asset*
 - `GET /machinery/<id>/` - Detail *Machinery*
-- `GET /spareparts/` - Master data Suku Cadang (*Spare Part*)
-- `GET /spareparts/<id>/` - Detail *Spare Part*
 - `GET /workorders/` - List Surat Perintah Kerja (WO)
 - `GET /workorders/<id>/` - Detail WO
 - `GET /maintenance/` - List Jadwal Tugas Pemeliharaan Rutin
 - `GET /maintenance/<id>/` - Detail *Maintenance Task*
-- `GET /inventory/` - Stok *Inventory* Barang
+- `GET /inventory/` - Stok *Inventory* Barang (Material/Suku Cadang)
 - `GET /inventory/<id>/` - Detail Stok
 
 *(Catatan: Sebagian besar endpoint Asset Module mendukung operasi lengkap POST/PUT/DELETE tergantung hak akses role Anda)*
@@ -267,28 +265,28 @@ Panduan lengkap untuk *setup project* HSE Management System untuk tim *developme
 
 ### Untuk Teman yang Ingin Clone Repository
 
-**Repository**: `https://github.com/DiegoSavio1027/saipemuos.git` (Private)
+**Repository**: `https://github.com/DiegoSavio1027/saipem.git` (Private)
 
 #### Opsi 1: Clone dengan PAT (Personal Access Token)
 
 ```bash
 # Clone dengan PAT embedded
-git clone https://DiegoSavio1027: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@github.com/DiegoSavio1027/saipemuos.git
+git clone https://<YOUR_GITHUB_USERNAME>:<YOUR_PERSONAL_ACCESS_TOKEN>@github.com/DiegoSavio1027/saipem.git
 
-cd saipemuos
+cd saipem-hse
 ```
 
 #### Opsi 2: Clone Normal + Input PAT saat Diminta
 
 ```bash
 # Clone repository
-git clone https://github.com/DiegoSavio1027/saipemuos.git
+git clone https://github.com/DiegoSavio1027/saipem.git
 
-cd saipemuos
+cd saipem-hse
 
 # Saat diminta credentials:
-# Username: DiegoSavio1027
-# Password: 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
+# Username: <YOUR_GITHUB_USERNAME>
+# Password: <YOUR_PERSONAL_ACCESS_TOKEN>
 ```
 
 #### Opsi 3: Setup SSH (Recommended untuk jangka panjang)
@@ -305,9 +303,9 @@ cat ~/.ssh/id_ed25519.pub
 # Paste ke GitHub: Settings → SSH and GPG keys → New SSH key
 
 # Clone dengan SSH
-git clone git@github.com:DiegoSavio1027/saipemuos.git
+git clone git@github.com:DiegoSavio1027/saipem.git
 
-cd saipemuos
+cd saipem-hse
 ```
 
 ---
@@ -459,11 +457,11 @@ npm run preview
 
 ### Personal Access Token (PAT) Info
 
-**Token**: `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`
+**Token**: Buat token baru di [GitHub Settings > Developer Settings](https://github.com/settings/tokens/new)
 
-**Permissions**: Full access to private repositories
+**Permissions**: Centang `repo` (Full control of private repositories)
 
-**Expiry**: Check GitHub settings for expiration date
+**Expiry**: Sesuai preferensi Anda (rekomendasi: 30-90 hari)
 
 ### Storing PAT Securely
 
@@ -608,8 +606,8 @@ npm run dev -- --port 5174
 
 **Authentication Failed**
 ```bash
-# Update remote URL with PAT
-git remote set-url origin https://DiegoSavio1027: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@github.com/DiegoSavio1027/saipemuos.git
+# Update remote URL with PAT (Atau hapus token lama agar diminta ulang)
+git remote set-url origin https://github.com/DiegoSavio1027/saipem.git
 
 # Try push again
 git push origin main
@@ -679,6 +677,6 @@ For issues or questions:
 
 ---
 
-**Last Updated**: May 29, 2026  
-**Version**: 1.0.0  
+**Last Updated**: June 25, 2026  
+**Version**: 1.1.0  
 **Status**: Ready for Team Collaboration ✅
