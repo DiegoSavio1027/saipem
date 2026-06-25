@@ -20,64 +20,74 @@
       </div>
 
       <!-- Stats Grid -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Monitored Assets -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" @click="router.push('/assets')">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Total Asset Systems</CardTitle>
-            <Cpu class="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-3xl font-black text-slate-900 dark:text-white">{{ assets.length }}</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Registered in fleet</p>
-          </CardContent>
-        </Card>
-
-        <!-- Healthy Status -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <!-- Fleet Health Score (OEE Equivalent) -->
         <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Operational Assets</CardTitle>
-            <CheckCircle class="h-4 w-4 text-green-500" />
+            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Fleet Health Score</CardTitle>
+            <Settings class="h-4 w-4 text-indigo-500" />
           </CardHeader>
           <CardContent>
-            <div class="text-3xl font-black text-slate-900 dark:text-white">{{ healthyCount }}</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Stable condition</p>
+            <div class="flex items-end gap-2">
+              <div class="text-4xl font-black text-slate-900 dark:text-white" :class="fleetHealthScore > 80 ? 'text-green-600' : 'text-amber-500'">{{ fleetHealthScore }}<span class="text-xl text-slate-400 ml-1">%</span></div>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4">
+              <div class="bg-indigo-500 h-1.5 rounded-full transition-all duration-1000" :style="`width: ${fleetHealthScore}%`"></div>
+            </div>
+            <p class="text-[9px] text-slate-500 dark:text-slate-400 mt-3 font-mono uppercase tracking-widest">Overall Asset Condition</p>
           </CardContent>
         </Card>
 
-        <!-- Critical Warnings -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow" :class="criticalCount > 0 ? 'border-red-200 dark:border-red-950 bg-red-50/5' : ''">
+        <!-- Monitored Machinery (IoT) -->
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" @click="router.push('/assets/machinery')">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Critical Assets</CardTitle>
-            <AlertTriangle class="h-4 w-4 text-red-500" :class="criticalCount > 0 ? 'animate-pulse' : ''" />
+            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Monitored Machinery</CardTitle>
+            <Cpu class="h-4 w-4 text-blue-500 animate-pulse" />
           </CardHeader>
           <CardContent>
-            <div class="text-3xl font-black text-slate-900 dark:text-white" :class="criticalCount > 0 ? 'text-red-600 dark:text-red-400' : ''">{{ criticalCount }}</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Require immediate maintenance</p>
+            <div class="text-4xl font-black text-slate-900 dark:text-white">{{ machinery.length }}</div>
+            <div class="mt-2 text-[10px] font-mono font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded inline-flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping"></span> Live Signal Active
+            </div>
+            <p class="text-[9px] text-slate-500 dark:text-slate-400 mt-3 font-mono uppercase tracking-widest">IoT Telemetry Units</p>
           </CardContent>
         </Card>
 
-        <!-- Active Work Orders -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" @click="router.push('/assets/work-orders')">
+        <!-- Total Operating Hours -->
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Active WOs</CardTitle>
-            <ClipboardList class="h-4 w-4 text-orange-500" />
+            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Fleet Operating Hours</CardTitle>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </CardHeader>
           <CardContent>
-            <div class="text-3xl font-black text-slate-900 dark:text-white">{{ activeWorkOrdersCount }}</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Pending or in-progress jobs</p>
+            <div class="text-4xl font-black text-slate-900 dark:text-white">{{ totalOperatingHours.toLocaleString() }}</div>
+            <div class="mt-2 text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+               <CheckCircle class="w-3 h-3" /> All systems nominal
+            </div>
+            <p class="text-[9px] text-slate-500 dark:text-slate-400 mt-3 font-mono uppercase tracking-widest">Cumulative run-time</p>
           </CardContent>
         </Card>
 
-        <!-- Low Stock Inventory -->
-        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" :class="lowStockInventoryCount > 0 ? 'border-orange-200 dark:border-orange-900 bg-orange-50/5' : ''" @click="router.push('/assets/inventory')">
+        <!-- Alerts & Backlog -->
+        <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" :class="totalAlerts > 0 ? 'border-red-200 dark:border-red-950 bg-red-50/5' : ''" @click="router.push('/assets/work-orders')">
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Inv. Alerts</CardTitle>
-            <Package class="h-4 w-4 text-orange-500" />
+            <CardTitle class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono">Action Required</CardTitle>
+            <AlertTriangle class="h-4 w-4" :class="totalAlerts > 0 ? 'text-red-500 animate-pulse' : 'text-slate-300'" />
           </CardHeader>
           <CardContent>
-            <div class="text-3xl font-black text-slate-900 dark:text-white" :class="lowStockInventoryCount > 0 ? 'text-orange-600 dark:text-orange-400' : ''">{{ lowStockInventoryCount }}</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">General items below min stock</p>
+            <div class="flex gap-6 items-end mt-1">
+              <div>
+                <span class="text-4xl font-black" :class="totalAlerts > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'">{{ totalAlerts }}</span>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mt-1">Alerts</p>
+              </div>
+              <div class="h-10 w-px bg-slate-200 dark:bg-slate-700"></div>
+              <div>
+                <span class="text-2xl font-black text-orange-500">{{ activeWorkOrdersCount }}</span>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mt-1">Active WOs</p>
+              </div>
+            </div>
+            <p class="text-[9px] text-slate-500 dark:text-slate-400 mt-3 font-mono uppercase tracking-widest">Pending maintenance tasks</p>
           </CardContent>
         </Card>
 
@@ -198,6 +208,7 @@ const router = useRouter();
 
 const isLoading = ref(true);
 const assets = ref([]);
+const machinery = ref([]);
 const workOrders = ref([]);
 const inventory = ref([]);
 
@@ -221,6 +232,12 @@ const fetchDashboardData = async () => {
     const woResponse = await fetch(`${API_BASE_URL}/asset/workorders/`, { headers });
     if (woResponse.ok) {
       workOrders.value = await woResponse.json();
+    }
+
+    // Fetch machinery
+    const macResponse = await fetch(`${API_BASE_URL}/asset/machinery/${queryString}`, { headers });
+    if (macResponse.ok) {
+      machinery.value = await macResponse.json();
     }
 
     // Fetch inventory
@@ -251,6 +268,22 @@ const healthyCount = computed(() => {
 const criticalCount = computed(() => {
   return assets.value.filter(a => a.status === 'CRITICAL' || a.status === 'MAINTENANCE').length;
 });
+
+const fleetHealthScore = computed(() => {
+  if (assets.value.length === 0) return 100;
+  const totalScore = assets.value.reduce((sum, asset) => sum + asset.health_score, 0);
+  return Math.round(totalScore / assets.value.length);
+});
+
+const totalOperatingHours = computed(() => {
+  return machinery.value.reduce((sum, mac) => sum + mac.operating_hours, 0);
+});
+
+const criticalMachineryCount = computed(() => {
+  return machinery.value.filter(m => m.needs_maintenance).length;
+});
+
+const totalAlerts = computed(() => criticalCount.value + criticalMachineryCount.value);
 
 const activeWorkOrders = computed(() => {
   return workOrders.value.filter(wo => wo.status === 'PENDING' || wo.status === 'IN_PROGRESS');
