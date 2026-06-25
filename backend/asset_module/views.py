@@ -290,6 +290,9 @@ def workorder_add_material(request, wo_id):
     inventory_item_id = request.data.get('spare_part_id') # keeping variable name from frontend for compatibility
     quantity = int(request.data.get('quantity_used', 1))
     
+    if quantity <= 0:
+        return Response({"error": "Quantity must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
+    
     try:
         inventory_item = InventoryItem.objects.get(pk=inventory_item_id)
     except InventoryItem.DoesNotExist:

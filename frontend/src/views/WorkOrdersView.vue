@@ -234,7 +234,11 @@
               </div>
               <div class="col-span-3">
                 <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Qty</label>
-                <input v-model.number="materialForm.quantity_used" type="number" min="1" class="w-full px-2 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-[var(--color-saipem-tertiary)]">
+                <input v-model.number="materialForm.quantity_used" type="number" min="1" :max="allInventoryItems.find(i => i.item_code === materialForm.spare_part_id)?.available_stock || 1" @input="() => {
+                    const maxStock = allInventoryItems.find(i => i.item_code === materialForm.spare_part_id)?.available_stock || 1;
+                    if (materialForm.quantity_used > maxStock) materialForm.quantity_used = maxStock;
+                    if (materialForm.quantity_used < 1) materialForm.quantity_used = 1;
+                }" class="w-full px-2 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-[var(--color-saipem-tertiary)]">
               </div>
               <div class="col-span-2">
                 <button type="button" @click="addMaterialToWo" :disabled="isAddingMaterial || !materialForm.spare_part_id" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white font-bold rounded transition text-xs flex justify-center items-center h-[34px]">
