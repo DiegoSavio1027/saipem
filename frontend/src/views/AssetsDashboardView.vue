@@ -229,7 +229,7 @@ const fetchDashboardData = async () => {
     }
 
     // Fetch work orders
-    const woResponse = await fetch(`${API_BASE_URL}/asset/workorders/`, { headers });
+    const woResponse = await fetch(`${API_BASE_URL}/asset/workorders/${queryString}`, { headers });
     if (woResponse.ok) {
       workOrders.value = await woResponse.json();
     }
@@ -241,7 +241,7 @@ const fetchDashboardData = async () => {
     }
 
     // Fetch inventory
-    const invResponse = await fetch(`${API_BASE_URL}/asset/inventory/`, { headers });
+    const invResponse = await fetch(`${API_BASE_URL}/asset/inventory/${queryString}`, { headers });
     if (invResponse.ok) {
       inventory.value = await invResponse.json();
     }

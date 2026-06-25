@@ -306,9 +306,20 @@ const fetchWorkOrders = async () => {
   try {
     const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
     let url = `${API_BASE_URL}/asset/workorders/`
+    const params = new URLSearchParams()
+    
     if (authState.userRole === 'Worker') {
-      url += `?assigned_to=${authState.empId}`
+      params.append('assigned_to', authState.empId)
     }
+    
+    if (authState.selectedVessel) {
+      params.append('vessel_id', authState.selectedVessel.asset_id)
+    }
+
+    if (params.toString()) {
+      url += `?${params.toString()}`
+    }
+
     const woResponse = await fetch(url, { headers })
     if (woResponse.ok) {
       workOrders.value = await woResponse.json()

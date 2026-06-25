@@ -228,7 +228,12 @@ const formData = ref({
 const fetchInventory = async () => {
   isLoading.value = true
   try {
-    const response = await fetch(`${API_BASE_URL}/asset/inventory/`, {
+    let url = `${API_BASE_URL}/asset/inventory/`
+    if (authState.selectedVessel) {
+      url += `?vessel_id=${authState.selectedVessel.asset_id}`
+    }
+    
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${getAccessToken()}`
       }

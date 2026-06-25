@@ -318,7 +318,10 @@ def maintenance_detail(request, task_id):
 def inventory_list(request):
     """Get all inventory items or create new item"""
     if request.method == 'GET':
+        vessel_id = request.query_params.get('vessel_id')
         items = InventoryItem.objects.all()
+        if vessel_id:
+            items = items.filter(asset_location__vessel_id=vessel_id)
         serializer = InventoryItemSerializer(items, many=True)
         return Response(serializer.data)
 
