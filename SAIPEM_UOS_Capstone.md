@@ -41,6 +41,8 @@ Sistem ini dioperasikan berdasarkan jabatan. Berikut adalah detail alur aplikasi
    * HR Staff mengubah `roster_status` pegawai dari `OFFBOARD` menjadi `ONBOARD` saat pergantian shift mingguan. Pegawai berstatus *Off-board* otomatis sistemnya terkunci dan tidak bisa membuat Izin Kerja.
 * **Validasi Keselamatan Medis (Form Data)**:
    * Memantau status kesehatan (Medical Check Up) setiap pekerja. Jika status pekerja adalah `EXPIRED` atau `UNFIT`, HR Staff menahan mereka di darat (*Off-Board*) untuk mencegah pekerja sakit beroperasi di lapangan.
+* **Kalkulasi Payroll Terotomasi (Business Flow)**:
+   * Mengambil data *Timesheet* berdasarkan *Roster* untuk kru operasional lapangan (Offshore). Sistem memiliki logika eksklusif yang secara otomatis **mengecualikan peran Admin dan HR Staff** dari slip gaji lapangan.
 
 ### ⚙️ 3. Role: Chief Engineer (Kepala Teknisi Mesin)
 **Kapasitas:** Bertanggung jawab penuh atas pengelolaan aset kapal, inventaris, dan jadwal *Maintenance*.
@@ -66,15 +68,16 @@ Sistem ini dioperasikan berdasarkan jabatan. Berikut adalah detail alur aplikasi
 
 ### 👷‍♂️ 5. Role: Worker (Offshore Crew / Pekerja Lapangan)
 **Kapasitas:** Mengeksekusi pekerjaan fisik di lapangan berdasarkan *Work Order*.
-* **Cek Tugas (UI Flow)**: Login (diarahkan ke `/hse`). Worker mengecek daftar *Work Order* yang di-assign untuknya hari itu.
+* **Cek Tugas (UI Flow)**: Login (diarahkan ke `/hse`). Worker mengecek daftar *Work Order* (WO) yang di-assign untuknya hari itu dengan status `PENDING`.
 * **Pembuatan Izin Kerja / PTW**:
-   * Worker masuk ke menu **Permit to Work (PTW)** dan menekan *Create*. Ia memilih `deck_location` dan `permit_type`, lalu mengirimnya (Status: `PENDING`). Worker dilarang bekerja sebelum disetujui.
+   * Worker diwajibkan untuk menekan **Request PTW** langsung dari Work Order tersebut. Izin kerja ini akan terkait secara hierarkis (Status PTW: `PENDING`).
 * **Eksekusi & Auto Check-In (Business Flow) 🔥**:
-   * Begitu disetujui, Worker menekan tombol **Start Work** di aplikasinya.
-   * *Otomatisasi Sistem*: Di belakang layar, **aplikasi melacak titik awal pekerja (Check-In) dan memunculkannya di Peta Live POB kapal**.
+   * Begitu PTW disetujui oleh Safety Officer, Worker diwajibkan mengisi lembar *Pre-Job Safety Verification* (JSA/TBT), mengumpulkan tanda tangan, dan mengunggah foto lapangan.
+   * Setelah diverifikasi, Worker menekan tombol **Start Work**.
+   * *Otomatisasi Sistem*: Di belakang layar, status PTW dan WO berubah menjadi `IN_PROGRESS`, lalu **sistem melacak titik awal pekerja (Check-In) dan memunculkannya di Peta Live POB kapal secara real-time**.
 * **Penyelesaian & Auto Check-Out (Business Flow) 🔥**:
-   * Pekerjaan selesai, Worker menekan **Mark as Done** beserta `completion_notes`.
-   * *Otomatisasi Sistem*: Aplikasi secara otomatis mencabut titik lokasi pekerja dari peta *Live POB* (Auto Check-Out), mendandakan ia sudah keluar dari bahaya.
+   * Pekerjaan selesai, Worker menekan **Mark as Job Done** beserta `completion_notes`.
+   * *Otomatisasi Sistem*: Aplikasi secara otomatis mencabut titik lokasi pekerja dari peta *Live POB* (Auto Check-Out), PTW berubah menjadi `WAITING_FOR_CLOSE`, menandakan ia sudah keluar dari zona bahaya.
 
 ---
 
@@ -84,6 +87,8 @@ Sistem SAIPEM UOS ini adalah sebuah rantai operasi yang kuat dan anti-bocor:
 1. **Admin** membuat fondasi data kapal, struktur *Deck Location*, dan otorisasi *Role* akun pengguna.
 2. **HR Staff** memfilter pekerja, memastikan hanya kru "Sehat" (MCU *Fit*) dan sedang bertugas (*On-board*) yang dapat mengakses modul HSE.
 3. **Chief Engineer** memantau *IoT Telemetry*, merilis *Work Order*, dan memesan (*Reserve*) stok inventaris secara otomatis.
-4. **Worker** melihat *Work Order* miliknya, lalu merilis Permohonan Izin Kerja (*PTW*) ke sistem untuk divalidasi.
-5. **Safety Officer** memastikan lokasi aman, memberikan Izin (*Approve* PTW), dan melacak setiap jengkal pergerakan Worker yang sedang bekerja melalui *Live POB Check-In*.
-6. Pekerjaan selesai, **Worker** *Check-Out* secara otomatis dari area bahaya. **Safety Officer** melakukan verifikasi dan menutup (Close) izin kerja, memicu **Sistem memotong (*Auto-Deduct*) stok inventaris secara fisik dan mengubah status Work Order menjadi *COMPLETED***. Seluruh data transaksi diarsip abadi.
+4. **Worker** melihat *Work Order* miliknya, lalu wajib merilis Permohonan Izin Kerja (*Request PTW*) ke sistem untuk divalidasi.
+5. **Safety Officer** memastikan lokasi aman, tidak ada konflik LOTO, lalu memberikan Izin (*Approve* PTW).
+6. **Worker** mengisi *Pre-Job Safety* (JSA/TBT) dan mengeklik *Start Work*, memicu **Auto Check-In Live POB**. *Safety Officer* melacak pergerakan kru selama pekerjaan *In Progress*.
+7. Pekerjaan selesai, **Worker** mengeklik *Mark as Job Done* untuk *Auto Check-Out* dari area bahaya.
+8. **Safety Officer** melakukan verifikasi lapangan dan menutup (Close) izin kerja, memicu **Sistem memotong (*Auto-Deduct*) stok inventaris WO secara fisik dan mengubah status Work Order menjadi *COMPLETED***. Seluruh data transaksi diarsip abadi secara transparan.
