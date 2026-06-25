@@ -88,12 +88,12 @@
         <Card class="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader>
             <CardTitle class="text-lg font-black text-slate-900 dark:text-white tracking-tight">Critical Assets</CardTitle>
-            <CardDescription class="text-xs text-slate-500 dark:text-slate-400">Vessel machinery with warning or critical health score</CardDescription>
+            <CardDescription class="text-xs text-slate-500 dark:text-slate-400">Asset systems with warning or critical health score</CardDescription>
           </CardHeader>
           <CardContent>
             <div v-if="criticalAssets.length === 0" class="flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-slate-500">
               <CheckCircle class="w-10 h-10 text-green-500 mb-2 opacity-50" />
-              <p class="text-xs font-mono">All machinery is operating within normal telemetry ranges</p>
+              <p class="text-xs font-mono">All asset systems are in normal condition</p>
             </div>
             <ul v-else class="space-y-3 max-h-[300px] overflow-y-auto">
               <li v-for="asset in criticalAssets" :key="asset.asset_id" class="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 rounded-lg text-xs font-mono">
