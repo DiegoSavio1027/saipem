@@ -68,7 +68,49 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import PobVisualMap from '@/components/PobVisualMap.vue';
 import { websocketState } from '@/store/websocket';
+import { authState } from '@/store/auth';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8989/api/v1';
+
+const fetchInitialPob = async () => {
+  try {
+    let url = `${API_BASE_URL}/hse/pob/?current=true`;
+    
+    const vesselId = authState.assignedVessel?.asset_id || authState.assignedVessel?.id || authState.selectedVessel?.id;
+    if (vesselId) {
+      url += `&vessel=${vesselId}`;
+    }
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${authState.token}`
+      },
+      credentials: 'include'
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      if (websocketState.liveFeeds.length === 0) {
+        websocketState.liveFeeds = data.map(log => ({
+          action: log.action,
+          employee_name: log.employee_name,
+          location: log.location_name || (typeof log.deck_location === 'object' ? log.deck_location.deck_name : log.deck_location),
+          time: new Date(log.timestamp).toLocaleString(),
+          timestamp: log.timestamp
+        }));
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch initial POB data:', error);
+  }
+};
+
+onMounted(() => {
+  fetchInitialPob();
+});
 </script>

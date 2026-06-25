@@ -23,7 +23,7 @@ class VesselWithDecksSerializer(serializers.Serializer):
 
 class POBLogSerializer(serializers.ModelSerializer):
     employee_name = serializers.SerializerMethodField()
-    vessel_name = serializers.CharField(source='vessel.vessel_name', read_only=True)
+    location_name = serializers.CharField(source='deck_location.deck_name', read_only=True)
 
     def get_employee_name(self, obj):
         from hr_module.models import Employee
@@ -35,6 +35,6 @@ class POBLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = POBLog
-        fields = ['id', 'emp_id', 'employee_name', 'deck_location', 'vessel', 'vessel_name', 'action', 'timestamp']
-        read_only_fields = ['timestamp', 'vessel_name']
+        fields = ['id', 'emp_id', 'employee_name', 'deck_location', 'location_name', 'action', 'timestamp']
+        read_only_fields = ['timestamp']
 

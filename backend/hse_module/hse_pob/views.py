@@ -265,17 +265,45 @@ def api_location_detail(request, pk):
 @permission_classes([IsAuthenticated])
 def api_pob_log(request):
     if request.method == 'GET':
-        # Get recent POB logs (last 10)
-        logs = POBLog.objects.all()
-
-        # Filter by vessel if provided
         vessel_id = request.query_params.get('vessel')
-        if vessel_id:
-            logs = logs.filter(vessel_id=vessel_id)
+        is_current = request.query_params.get('current') == 'true'
+        
+        if is_current:
+            # Get the latest log for each employee
+            from django.db.models import Max, OuterRef, Subquery
+            
+            # Subquery to get the latest POBLog ID for each emp_id
+            latest_logs = POBLog.objects.filter(
+                emp_id=OuterRef('emp_id')
+            ).order_by('-timestamp')
+            
+            # Main query to get those exact logs
+            logs = POBLog.objects.filter(
+                id=Subquery(latest_logs.values('id')[:1])
+            )
+            
+            # If we only want currently onboard, we filter action='IN'
+            # But the frontend PobVisualMap expects both IN and OUT to process correctly,
+            # or it can just process IN. Actually, if we just return the 'IN' logs,
+            # it's the current state.
+            logs = logs.filter(action='IN')
+        else:
+            logs = POBLog.objects.all()
 
-        logs = logs.order_by('-timestamp')[:10]
+        # Filter by vessel if provided (via WorkLocation's many-to-many to Vessel)
+        if vessel_id:
+            logs = logs.filter(deck_location__vessels__id=vessel_id)
+
+        # Order by timestamp
+        logs = logs.order_by('-timestamp')
+        
+        # If not getting current state, limit to recent logs
+        if not is_current:
+            logs = logs[:50]
+            
         serializer = POBLogSerializer(logs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+        
     elif request.method == 'POST':
         serializer = POBLogSerializer(data=request.data)
         if serializer.is_valid():
@@ -293,7 +321,7 @@ def api_pob_log(request):
                     "message": {
                         "action": pob_log.action,
                         "employee_name": serializer.data.get('employee_name', pob_log.emp_id),
-                        "location": pob_log.deck_location,
+                        "location": pob_log.deck_location.deck_name,
                         "timestamp": pob_log.timestamp.isoformat()
                     }
                 }
