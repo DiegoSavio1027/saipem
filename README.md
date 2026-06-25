@@ -106,28 +106,45 @@ sequenceDiagram
     deactivate System
 ```
 
-### 2. Alur HSE - Permit to Work (PTW)
+### 2. Alur HSE & ASSET Terintegrasi (Work Order, PTW & Live POB)
 ```mermaid
 sequenceDiagram
-    participant Worker as HSE Officer / Requester
+    participant Eng as Chief Engineer
+    participant Worker as Offshore Crew
     participant System as Saipem UOS
-    participant Manager as Management / Approver
+    participant HSE as Safety Officer
     
-    Worker->>System: Buat Permit to Work (Aset, Pekerja, Lokasi)
+    Eng->>System: Buat Work Order (WO) & Assign Pekerja
+    System-->>Worker: WO Diterima (Status: PENDING)
+    
+    Worker->>System: Request Permit to Work (PTW) dari WO
     activate System
-    System-->>System: Validasi Pekerja (Harus ada di Roster Kapal ybs)
-    System->>System: Status PTW = DRAFT
-    System-->>Worker: Form PTW Disimpan
+    System-->>System: Validasi Pekerja (Cek Roster Kapal)
+    System->>System: Simpan PTW (Status: PENDING)
+    System-->>HSE: Menunggu Approval HSE
     deactivate System
     
-    Worker->>System: Submit for Approval
-    System-->>Manager: Notifikasi (Dashboard/UI)
-    
-    Manager->>System: Approve PTW
-    activate System
-    System->>System: Update Status = APPROVED, Form Terkunci
+    HSE->>System: Cek Konflik Lokasi & Approve PTW
+    System->>System: Update Status PTW = APPROVED
     System-->>Worker: PTW Diterbitkan (Active)
+    
+    Worker->>System: Isi JSA, Upload TBT Photo, & Klik "Start Work"
+    activate System
+    System->>System: PTW = IN_PROGRESS, WO = IN_PROGRESS
+    System->>System: Auto Check-In POB (Personnel On Board)
+    System-->>System: Broadcast via WebSocket ke Dashboard POB
+    System-->>Worker: Izin Bekerja Dimulai
     deactivate System
+    
+    Worker->>System: Selesai Bekerja (Klik "Mark as Job Done")
+    activate System
+    System->>System: PTW = WAITING_FOR_CLOSE
+    System->>System: Auto Check-Out POB
+    System-->>HSE: Menunggu Verifikasi Penutupan
+    deactivate System
+    
+    HSE->>System: Confirm Close PTW (Pengecekan Area Aman)
+    System->>System: PTW = CLOSED, WO = COMPLETED
 ```
 
 ### 3. Alur ASSET - Work Order & Maintenance
@@ -261,11 +278,11 @@ Manajemen Lokasi (Deck/Area) dan penghubungan ke Kapal Utama.
 
 | Aktor / Role | Hak Akses & Aksi Spesifik di Aplikasi | Automasi & Proses Sistem di Latar Belakang |
 | --- | --- | --- |
-| **Admin / System Administrator** | • *Full Access* ke semua modul sistem.<br>• Manajemen CRUD Akun Pengguna & Role (Assign Role, reset password).<br>• Manajemen Master Data Absolut: *Vessel, Machinery, Job Positions, Location/Deck, Inventory*. | • Log audit sistem terekam untuk setiap perubahan data kritikal.<br>• Menerapkan perlindungan integritas relasi *database* (misal: memblokir penghapusan *Vessel* jika masih ada pekerja *On Board* atau PTW aktif di dalamnya). |
-| **HR Staff** | • Menambahkan profil *Employee*, *Job Position*, dan histori *Certification* pekerja.<br>• Menyusun jadwal alokasi pekerja (*Roster Matrix*) ke lokasi/kapal tertentu.<br>• Melakukan pembaruan status kelayakan *Medical Check-Up* (MCU).<br>• Memproses kalkulasi *Payroll/Timesheet* otomatis.<br>• Memantau *Analytics Dashboard* departemen HR. | • **Smart MCU Blocker:** Sistem secara *real-time* menolak form penjadwalan *Roster* jika pekerja berstatus medis *UNFIT* atau sertifikasinya *EXPIRED*.<br>• Kalkulasi penggajian otomatis di- *generate* berdasarkan *Daily Rate* posisi dikali dengan durasi hari pada *Roster*.<br>• *Auto-trigger* penambahan kuota manifest *Personnel On Board* (POB) kapal saat jadwal pekerja dimulai. |
-| **Safety Officer** | • Membuat form *Permit to Work* (PTW) untuk pekerjaan berisiko (Panas, Dingin, Ruang Terbatas).<br>• Melakukan *Approval* atau penolakan atas PTW.<br>• Menginput *Incident Report* (Laporan Kecelakaan Kerja).<br>• Memantau daftar riil *Personnel On Board* (POB) harian.<br>• Mengupdate *System Status* keamanan operasional. | • **PTW Location Conflict Check:** Sistem memastikan lokasi/deck *Permit to Work* tidak tumpang tindih dengan pekerjaan berbahaya lainnya di area yang sama.<br>• Saat izin PTW di-*approve*, form tersebut otomatis terkunci oleh sistem (*hukum read-only / immutable*) untuk tujuan audit.<br>• Sistem otomatis mengakumulasi log *Safe Man Hours* harian dari total POB. |
-| **Chief Engineer** | • Menerbitkan dan menjalankan *Work Order* (WO) untuk peralatan mesin.<br>• Mengelola stok Inventaris Terpadu secara sentral.<br>• Menjadwalkan *Maintenance Tasks* berkala untuk tiap *Machinery* di atas kapal. | • **Smart Inventory Reservation:** Sistem akan mereservasi (*booking*) stok secara otomatis saat material ditambahkan ke WO, dan baru benar-benar memotong stok fisik ketika WO dinyatakan *Completed*.<br>• Sistem otomatis mengubah status operasional mesin menjadi *Under Maintenance* selama WO berjalan, mencegah mesin digunakan dalam operasional (terhubung ke modul HSE). |
-| **Worker (Offshore Crew)** | • *Read-only access* ke portal pekerja (Tampilan khusus Worker Dashboard).<br>• Melihat detail jadwal *Roster* keberangkatan dan penugasan lokasi pribadi miliknya.<br>• Mengecek masa berlaku *Certification* dan *MCU* pribadinya sendiri.<br>• Mengakses form cetak untuk PTW yang ditugaskan kepadanya. | • Pekerja hanya bisa mengakses modul terkait dirinya, dan akses menu di sidebar (*Sidebar*) otomatis disembunyikan berdasarkan *Role* untuk menjaga keamanan data. |
+| **Admin / System Administrator** | • *Full Access* ke semua modul sistem.<br>• Manajemen CRUD Akun Pengguna & Role.<br>• Manajemen Master Data: *Vessel, Machinery, Job Positions, Deck, Inventory*. | • Log audit sistem terekam.<br>• Mencegah penghapusan relasi penting secara paksa. |
+| **HR Staff** | • Kelola *Employee*, *Job Position*, dan *Certification*.<br>• Mengatur *Roster Matrix* ke kapal lepas pantai.<br>• Mengakses kalkulasi *Payroll* / Gaji pekerja. | • **Smart MCU Blocker:** Menolak *Roster* jika medis pekerja *UNFIT* atau sertifikasi kadaluarsa.<br>• **Offshore Payroll Logic:** Otomatis menghitung gaji berdasarkan *Daily Rate* posisi dikali hari *On Board* dari Roster, **hanya berlaku** untuk peran Offshore (Chief Engineer, Safety Officer, Worker). Admin & HR Staff secara eksplisit dikecualikan dari penggajian lapangan. |
+| **Safety Officer** | • Menerima *Request PTW* dari Worker dan melakukan *Approval* atau Rejection.<br>• Menutup PTW yang sudah berstatus *Job Done*.<br>• Menginput *Incident Report*.<br>• Memicu/menghentikan **Emergency Muster Drill (Test Alarm)**. | • **PTW Location Conflict & LOTO Check.**<br>• Terkoneksi erat dengan *Work Order*: PTW yang disetujui adalah prasyarat untuk *Start Work*.<br>• Saat Test Alarm menyala, sistem langsung mengunci seluruh kegiatan operasional (PTW) yang aktif. |
+| **Chief Engineer** | • Menerbitkan *Work Order* (WO) untuk pemeliharaan peralatan mesin, dan menugaskannya kepada *Worker*.<br>• Mengelola *Inventory* spare-parts.<br>• Memantau *Telemetry / Health Score* aset mesin. | • **Smart Inventory Reservation:** Material pada WO di-reserve saat WO dibuat, dipotong dari stok fisik saat WO tuntas.<br>• Saat WO ditugaskan, *Worker* akan menerima dan harus melakukan proses permintaan PTW. |
+| **Worker (Offshore Crew)** | • Mengakses **Worker Dashboard**.<br>• Melihat WO yang ditugaskan dan me-*request* PTW kepada HSE.<br>• Mengisi *Pre-Job Safety Verification (JSA/TBT)* dan **Start Work**.<br>• Melaporkan pekerjaan selesai (**Mark as Job Done**). | • Akses dibatasi sangat ketat hanya untuk *task* miliknya sendiri.<br>• Saat menekan *Start Work*, sistem otomatis mengeksekusi **Auto Check-In** ke *Live POB*. Saat menekan *Mark as Done*, otomatis melakukan **Auto Check-Out**. |
 
 ---
 
@@ -356,20 +373,21 @@ cp .env.example .env
 nano .env  # atau gunakan editor favorit
 ```
 
-**Required environment variables:**
+**Required environment variables (.env):**
 ```env
-# Database Configuration
-DATABASE_ENGINE=django.db.backends.postgresql
-DATABASE_NAME=saipem_offshore_db
-DATABASE_USER=pgadmin
-DATABASE_PASSWORD=your_password
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
+# Database Configuration (Default to SQLite for quick setup)
+DATABASE_ENGINE=django.db.backends.sqlite3
+DB_NAME=saipem_offshore_db
+DB_USER=pgadmin
+DB_PASSWORD=pgadmin
+DB_HOST=localhost
+DB_PORT=5432
 
 # Django Settings
 DEBUG=True
 SECRET_KEY=your-secret-key-here
 ALLOWED_HOSTS=localhost,127.0.0.1
+
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
