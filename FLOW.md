@@ -124,8 +124,9 @@ sequenceDiagram
     Worker->>PTW: Pekerjaan Selesai (Mark as Done)
     Note over PTW, POB: Auto POB Check-out (Kembali ke Safe Zone)
     Safety->>PTW: Verifikasi Lapangan & Tutup PTW (Confirm Close)
-    Note over PTW, INV: Auto-update Work Order = COMPLETED
-    WO->>INV: Potong stok fisik & hapus status reservasi
+    Note over PTW, WO: Auto-update Work Order = WAITING_REVIEW
+    Engineer->>WO: Verifikasi Material & Complete WO
+    Note over WO, INV: WO = COMPLETED & Potong stok fisik inventory
 ```
 
 ### Referensi Halaman & Berkas Modul:
@@ -147,8 +148,8 @@ sequenceDiagram
 | :--- | :--- | :--- |
 | **Admin / System Administrator** | Registry Kapal, Pengaturan Deck, Manajemen User | Mendaftarkan kapal baru, menentukan area deck beserta tingkat risikonya, mengelola akun user. |
 | **HR Staff** | Registrasi Personel (Crew), MCU, Sertifikasi, Roster Matrix | Mengelola data karyawan, memperbarui status MCU (FIT/UNFIT), menginput sertifikasi keahlian, menugaskan kru ke jadwal roster kapal. |
-| **Chief Engineer** | Monitoring Mesin & Inventory, Modul Work Order | Melaporkan kerusakan alat mekanis/listrik di kapal, mengelola stok inventaris terpadu, menerbitkan Work Order (WO) perbaikan peralatan. |
-| **Safety Officer** | Approval PTW, Monitor POB, Emergency Control (Condition Red) | Melakukan audit aspek K3, menandatangani persetujuan izin kerja (PTW), memantau manifes orang di kapal secara real-time, mengaktifkan status darurat. |
+| **Chief Engineer** | Monitoring Mesin & Inventory, Modul Work Order | Melaporkan kerusakan alat mekanis/listrik di kapal, mengelola stok inventaris terpadu, menerbitkan Work Order (WO) perbaikan peralatan, serta **memverifikasi dan memfinalisasi (Complete) WO**. |
+| **Safety Officer** | Approval PTW, Monitor POB, Emergency Control (Condition Red) | Melakukan audit aspek K3, menandatangani persetujuan izin kerja (PTW), memantau manifes orang di kapal secara real-time, **menutup PTW secara keselamatan**, mengaktifkan status darurat. |
 | **Worker (Offshore Crew)** | Pembuatan PTW, Melakukan Toolbox Talk (TBT), Check-in/out POB | Mengajukan izin kerja PTW untuk perbaikan alat, melakukan briefing keselamatan sebelum bekerja, check-in/out saat masuk area deck. |
 
 ---
@@ -275,10 +276,21 @@ sequenceDiagram
         *   WebSocket mengirimkan sinyal keluar, sehingga Dashboard Live POB menghapus John Doe dan kru dari manifes Engine Room (kembali ke Safe Zone).
     2.  **Saat `confirm_close` dipanggil**:
         *   Status PTW berubah menjadi `CLOSED`.
-        *   Backend otomatis mengubah status Work Order terkait (`WO-9988`) menjadi `COMPLETED` dan mencatat tanggal penyelesaian.
-*   **Hasil Akhir**: Pekerjaan selesai dengan aman, manifes kapal bersih (kru tercatat keluar dengan selamat), dan Work Order tertutup sukses.
+        *   Backend otomatis mengubah status Work Order terkait (`WO-9988`) menjadi `WAITING_REVIEW` (menunggu verifikasi teknis akhir dari Chief Engineer).
+*   **Hasil Akhir**: Pekerjaan selesai dengan aman, manifes kapal bersih (kru tercatat keluar dengan selamat).
 
-### Langkah 10: Emergency Muster Drill (Kondisi Darurat)
+### Langkah 10: Verifikasi Work Order & Pemotongan Inventory
+*   **Aktor**: Chief Engineer.
+*   **Alur Frontend (FE)**:
+    1.  Chief Engineer melihat Work Order dengan status `WAITING_REVIEW` (ditandai dengan badge ungu) di halaman Work Orders.
+    2.  Ia mengecek penggunaan material yang terpakai selama pekerjaan.
+    3.  Jika sesuai, Chief Engineer menekan tombol **Complete WO** (mengirim request POST ke `/api/v1/asset/workorders/<id>/complete/`).
+*   **Alur Backend (BE)**:
+    1.  Backend mengubah status Work Order menjadi `COMPLETED`.
+    2.  Backend secara otomatis memotong stok fisik (*current_stock*) pada tabel `InventoryItem` dan melepaskan status reservasi (*quantity_reserved*).
+*   **Hasil Akhir**: Work Order resmi tertutup secara teknis, dan stok inventaris gudang terpotong permanen secara akurat.
+
+### Langkah 11: Emergency Muster Drill (Kondisi Darurat)
 *   **Aktor**: Safety Officer / Admin.
 *   **Alur Frontend (FE)**:
     1.  Dalam keadaan darurat, Safety Officer menekan tombol **Test Alarm** di menu navigasi atas.
