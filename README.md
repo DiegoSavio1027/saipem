@@ -119,12 +119,12 @@ sequenceDiagram
     
     Worker->>System: Request Permit to Work (PTW) dari WO
     activate System
-    System-->>System: Validasi Pekerja (Cek Roster Kapal)
+    System-->>System: Validasi: Roster Onboard, MCU Fit, Sertifikat Valid
     System->>System: Simpan PTW (Status: PENDING)
-    System-->>HSE: Menunggu Approval HSE
+    System-->>HSE: Notifikasi PTW Baru (via WebSocket)
     deactivate System
     
-    HSE->>System: Cek Konflik Lokasi & Approve PTW
+    HSE->>System: Cek Konflik Lokasi & LOTO, lalu Approve PTW
     System->>System: Update Status PTW = APPROVED
     System-->>Worker: PTW Diterbitkan (Active)
     
@@ -140,11 +140,20 @@ sequenceDiagram
     activate System
     System->>System: PTW = WAITING_FOR_CLOSE
     System->>System: Auto Check-Out POB
-    System-->>HSE: Menunggu Verifikasi Penutupan
+    System-->>HSE: Notifikasi Pekerjaan Selesai
     deactivate System
     
-    HSE->>System: Confirm Close PTW (Pengecekan Area Aman)
-    System->>System: PTW = CLOSED, WO = COMPLETED
+    HSE->>System: Confirm Close PTW (Verifikasi Area Steril)
+    System->>System: PTW = CLOSED
+    System->>System: WO = WAITING_REVIEW ← Menunggu Verifikasi CE
+    System-->>Eng: Notifikasi: WO Siap Diverifikasi
+    
+    Eng->>System: Verifikasi Material & Klik "Complete WO"
+    activate System
+    System->>System: WO = COMPLETED
+    System->>System: Auto-Deduct Inventory (Potong Stok Fisik)
+    System-->>Eng: Laporan Material Terpotong
+    deactivate System
 ```
 
 ### 3. Alur ASSET - Work Order & Maintenance
@@ -265,6 +274,8 @@ Manajemen Lokasi (Deck/Area) dan penghubungan ke Kapal Utama.
 - `GET /machinery/<id>/` - Detail *Machinery*
 - `GET /workorders/` - List Surat Perintah Kerja (WO)
 - `GET /workorders/<id>/` - Detail WO
+- `POST /workorders/<id>/add_material/` - Tambah material/spare part ke WO (otomatis reserve stok)
+- `POST /workorders/<id>/complete/` - **Chief Engineer** finalisasi WO → WO = `COMPLETED` + Auto-Deduct Inventory
 - `GET /maintenance/` - List Jadwal Tugas Pemeliharaan Rutin
 - `GET /maintenance/<id>/` - Detail *Maintenance Task*
 - `GET /inventory/` - Stok *Inventory* Barang (Material/Suku Cadang)
@@ -280,8 +291,8 @@ Manajemen Lokasi (Deck/Area) dan penghubungan ke Kapal Utama.
 | --- | --- | --- |
 | **Admin / System Administrator** | • *Full Access* ke semua modul sistem.<br>• Manajemen CRUD Akun Pengguna & Role.<br>• Manajemen Master Data: *Vessel, Machinery, Job Positions, Deck, Inventory*. | • Log audit sistem terekam.<br>• Mencegah penghapusan relasi penting secara paksa. |
 | **HR Staff** | • Kelola *Employee*, *Job Position*, dan *Certification*.<br>• Mengatur *Roster Matrix* ke kapal lepas pantai.<br>• Mengakses kalkulasi *Payroll* / Gaji pekerja. | • **Smart MCU Blocker:** Menolak *Roster* jika medis pekerja *UNFIT* atau sertifikasi kadaluarsa.<br>• **Offshore Payroll Logic:** Otomatis menghitung gaji berdasarkan *Daily Rate* posisi dikali hari *On Board* dari Roster, **hanya berlaku** untuk peran Offshore (Chief Engineer, Safety Officer, Worker). Admin & HR Staff secara eksplisit dikecualikan dari penggajian lapangan. |
-| **Safety Officer** | • Menerima *Request PTW* dari Worker dan melakukan *Approval* atau Rejection.<br>• Menutup PTW yang sudah berstatus *Job Done*.<br>• Menginput *Incident Report*.<br>• Memicu/menghentikan **Emergency Muster Drill (Test Alarm)**. | • **PTW Location Conflict & LOTO Check.**<br>• Terkoneksi erat dengan *Work Order*: PTW yang disetujui adalah prasyarat untuk *Start Work*.<br>• Saat Test Alarm menyala, sistem langsung mengunci seluruh kegiatan operasional (PTW) yang aktif. |
-| **Chief Engineer** | • Menerbitkan *Work Order* (WO) untuk pemeliharaan peralatan mesin, dan menugaskannya kepada *Worker*.<br>• Mengelola *Inventory* spare-parts.<br>• Memantau *Telemetry / Health Score* aset mesin. | • **Smart Inventory Reservation:** Material pada WO di-reserve saat WO dibuat, dipotong dari stok fisik saat WO tuntas.<br>• Saat WO ditugaskan, *Worker* akan menerima dan harus melakukan proses permintaan PTW. |
+| **Safety Officer** | • Menerima *Request PTW* dari Worker dan melakukan *Approval* atau Rejection.<br>• Menutup PTW yang sudah berstatus *Job Done* (**Confirm Close**).<br>• Menginput *Incident Report*.<br>• Memicu/menghentikan **Emergency Muster Drill (Test Alarm)**. | • **PTW Location Conflict & LOTO Check.**<br>• Saat *Confirm Close* PTW, sistem otomatis mengubah WO ke `WAITING_REVIEW` — bukan langsung COMPLETED. Inventory **belum** terpotong di tahap ini.<br>• Saat Test Alarm menyala, sistem langsung mengunci seluruh kegiatan operasional (PTW) yang aktif. |
+| **Chief Engineer** | • Menerbitkan *Work Order* (WO) untuk pemeliharaan peralatan mesin, dan menugaskannya kepada *Worker*.<br>• Mengelola *Inventory* spare-parts.<br>• Memantau *Telemetry / Health Score* aset mesin.<br>• **Verifikasi & Finalisasi WO** (tombol "Complete WO" muncul saat WO berstatus `WAITING_REVIEW`). | • **Smart Inventory Reservation:** Material pada WO di-*reserve* saat WO dibuat, dipotong dari stok fisik **hanya saat CE menekan "Complete WO"**. Ini memisahkan tanggung jawab keselamatan (SO) dari tanggung jawab teknis/material (CE).<br>• Saat WO ditugaskan, *Worker* akan menerima dan harus melakukan proses permintaan PTW. |
 | **Worker (Offshore Crew)** | • Mengakses **Worker Dashboard**.<br>• Melihat WO yang ditugaskan dan me-*request* PTW kepada HSE.<br>• Mengisi *Pre-Job Safety Verification (JSA/TBT)* dan **Start Work**.<br>• Melaporkan pekerjaan selesai (**Mark as Job Done**). | • Akses dibatasi sangat ketat hanya untuk *task* miliknya sendiri.<br>• Saat menekan *Start Work*, sistem otomatis mengeksekusi **Auto Check-In** ke *Live POB*. Saat menekan *Mark as Done*, otomatis melakukan **Auto Check-Out**. |
 
 ---
@@ -739,5 +750,5 @@ For issues or questions:
 ---
 
 **Last Updated**: June 25, 2026  
-**Version**: 1.1.0  
+**Version**: 1.2.0  
 **Status**: Ready for Team Collaboration ✅

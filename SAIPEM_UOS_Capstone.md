@@ -53,6 +53,10 @@ Sistem ini dioperasikan berdasarkan jabatan. Berikut adalah detail alur aplikasi
    * Chief Engineer menekan tombol **Create Work Order** dan menambahkan kebutuhan material dari **Inventory Terpadu**.
    * *Otomatisasi Sistem*: Sistem melakukan **Smart Inventory Reservation**, yaitu mencadangkan (*booking*) jumlah stok secara logis, memastikan material aman dari WO lain tanpa memotong fisik sebelum eksekusi selesai.
    * *Work Order* di-*publish* ke sistem operasional untuk dieksekusi.
+* **Verifikasi & Finalisasi WO (Business Flow) 🔑**:
+   * Setelah Safety Officer menutup PTW, WO otomatis berubah ke status `WAITING_REVIEW`.
+   * Chief Engineer melihat badge ungu **Waiting Review** di tabel Work Order, lalu klik **Complete WO** untuk memverifikasi bahwa material benar-benar terpakai.
+   * *Otomatisasi Sistem*: WO berubah menjadi `COMPLETED` dan sistem **Auto-Deduct** stok inventory secara permanen.
 
 ### 🦺 4. Role: Safety Officer (Pengendali Keselamatan / HSE)
 **Kapasitas:** Bertugas memastikan bahwa semua *Work Order* dieksekusi dengan aman tanpa mengancam nyawa.
@@ -63,6 +67,7 @@ Sistem ini dioperasikan berdasarkan jabatan. Berikut adalah detail alur aplikasi
    * Officer me-review lokasi kerja (`deck_location`). Jika aman, memasukkan *Digital Signature* dan menekan **Approve**.
 * **Pengecekan Akhir Lapangan (Form Data)**:
    * Ketika Worker melaporkan selesai, Officer turun ke lapangan untuk memastikan lokasi kerja steril. Ia kemudian menginput `closing_notes` dan menekan **Confirm Close**.
+   * *Otomatisasi Sistem*: PTW = `CLOSED` dan WO otomatis berubah ke `WAITING_REVIEW`. **Inventory belum terpotong** — ini adalah ranah verifikasi teknis Chief Engineer.
 * **Protokol Darurat "Emergency Lockdown"**:
    * Jika ada kebakaran, Officer mengaktifkan status "CONDITION RED". **Aplikasi seketika membekukan seluruh fitur pengajuan Izin Kerja**. Layar beralih mode merah dan memaksa kru memantau *Live POB* guna mengatur prioritas area evakuasi.
 
@@ -90,5 +95,6 @@ Sistem SAIPEM UOS ini adalah sebuah rantai operasi yang kuat dan anti-bocor:
 4. **Worker** melihat *Work Order* miliknya, lalu wajib merilis Permohonan Izin Kerja (*Request PTW*) ke sistem untuk divalidasi.
 5. **Safety Officer** memastikan lokasi aman, tidak ada konflik LOTO, lalu memberikan Izin (*Approve* PTW).
 6. **Worker** mengisi *Pre-Job Safety* (JSA/TBT) dan mengeklik *Start Work*, memicu **Auto Check-In Live POB**. *Safety Officer* melacak pergerakan kru selama pekerjaan *In Progress*.
-7. Pekerjaan selesai, **Worker** mengeklik *Mark as Job Done* untuk *Auto Check-Out* dari area bahaya.
-8. **Safety Officer** melakukan verifikasi lapangan dan menutup (Close) izin kerja, memicu **Sistem memotong (*Auto-Deduct*) stok inventaris WO secara fisik dan mengubah status Work Order menjadi *COMPLETED***. Seluruh data transaksi diarsip abadi secara transparan.
+7. Pekerjaan selesai, **Worker** mengeklik *Mark as Job Done* untuk *Auto Check-Out* dari area bahaya. PTW = `WAITING_FOR_CLOSE`.
+8. **Safety Officer** melakukan verifikasi lapangan dan menutup (Close) izin kerja → PTW = `CLOSED` dan WO berubah ke **`WAITING_REVIEW`**. Inventory belum dipotong.
+9. **Chief Engineer** memverifikasi pekerjaan secara teknis dan mengeklik **Complete WO** → WO = `COMPLETED` + **Auto-Deduct Inventory** secara permanen. Seluruh data transaksi diarsip abadi secara transparan.
