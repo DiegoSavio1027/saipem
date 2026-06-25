@@ -12,39 +12,6 @@ class Command(BaseCommand):
         
         while True:
             try:
-                # Update Assets
-                assets = Asset.objects.all()
-                for asset in assets:
-                    if asset.status == 'CRITICAL':
-                        # Gradually increase if critical to simulate degrading asset
-                        vibration_change = random.uniform(0.0, 0.15)
-                        temp_change = random.uniform(0.0, 1.0)
-                        new_vib = float(asset.current_vibration) + vibration_change
-                        new_temp = float(asset.current_temperature) + temp_change
-                    elif asset.status == 'MAINTENANCE':
-                        # Cool down during maintenance
-                        new_vib = random.uniform(4.0, 6.0)
-                        new_temp = random.uniform(65.0, 78.0)
-                    else:
-                        # Normal fluctuation
-                        new_vib = random.uniform(1.0, 3.2)
-                        new_temp = random.uniform(35.0, 55.0)
-
-                    # Cap values to realistic bounds
-                    new_vib = min(max(new_vib, 1.0), 12.0)
-                    new_temp = min(max(new_temp, 30.0), 150.0)
-                    
-                    asset.current_vibration = round(new_vib, 2)
-                    asset.current_temperature = round(new_temp, 2)
-                    asset.save(update_fields=['current_vibration', 'current_temperature'])
-
-                    # Save Telemetry Log
-                    TelemetryLog.objects.create(
-                        asset=asset,
-                        vibration=asset.current_vibration,
-                        temperature=asset.current_temperature
-                    )
-
                 # Update Machinery
                 machinery = MachineryEquipment.objects.all()
                 for mac in machinery:
