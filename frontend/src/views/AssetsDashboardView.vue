@@ -158,6 +158,7 @@
                     <th class="pb-3 pr-2">Description</th>
                     <th class="pb-3 pr-2">Priority</th>
                     <th class="pb-3 pr-2">Status</th>
+                    <th class="pb-3 pr-2">Assigned</th>
                     <th class="pb-3 text-right">Scheduled</th>
                   </tr>
                 </thead>
@@ -182,6 +183,16 @@
                       ]">
                         {{ wo.status }}
                       </span>
+                    </td>
+                    <td class="py-3 pr-2">
+                      <div class="flex items-center text-slate-500">
+                        <div class="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[9px] font-bold mr-2 uppercase">
+                          {{ wo.assigned_to_name ? wo.assigned_to_name.charAt(0) : 'U' }}
+                        </div>
+                        <span class="truncate max-w-[100px]" :title="wo.assigned_to_name || 'Unassigned'">
+                          {{ wo.assigned_to_name || 'Unassigned' }}
+                        </span>
+                      </div>
                     </td>
                     <td class="py-3 text-right">{{ formatDate(wo.scheduled_date) }}</td>
                   </tr>

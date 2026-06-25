@@ -6,9 +6,9 @@
           <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ authState.userRole === 'Worker' ? 'My Permits' : 'Permit To Work (PTW)' }}</h1>
           <p class="text-slate-500 dark:text-slate-400">{{ authState.userRole === 'Worker' ? 'View and manage your submitted permits' : 'Manage and review all work permits' }}</p>
         </div>
-        <button v-if="authState.userRole !== 'Worker'" @click="showModal = true" class="bg-[var(--color-saipem-tertiary)] hover:bg-[var(--color-saipem-tertiary)]/90 text-white px-4 py-2 rounded-md font-medium text-sm transition-colors shadow-sm flex items-center gap-2">
+        <button @click="showModal = true" class="bg-[var(--color-saipem-tertiary)] hover:bg-[var(--color-saipem-tertiary)]/90 text-white px-4 py-2 rounded-md font-medium text-sm transition-colors shadow-sm flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-            Create PTW
+            {{ authState.userRole === 'Worker' ? 'Request PTW' : 'Create PTW' }}
         </button>
       </div>
 

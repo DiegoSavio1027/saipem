@@ -145,6 +145,34 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             ]
         return []
 
+    def validate(self, data):
+        assigned_to = data.get('assigned_to', None)
+        scheduled_date = data.get('scheduled_date', None)
+        status = data.get('status', 'PENDING')
+        
+        # If updating, merge with instance data
+        if self.instance:
+            assigned_to = assigned_to or self.instance.assigned_to
+            scheduled_date = scheduled_date or self.instance.scheduled_date
+            
+        # We only apply the limit check if assigning a pending/in_progress work order
+        if assigned_to and scheduled_date and status in ['PENDING', 'IN_PROGRESS']:
+            active_wos = WorkOrder.objects.filter(
+                assigned_to=assigned_to,
+                scheduled_date=scheduled_date,
+                status__in=['PENDING', 'IN_PROGRESS']
+            )
+            
+            if self.instance:
+                active_wos = active_wos.exclude(pk=self.instance.pk)
+                
+            if active_wos.exists():
+                raise serializers.ValidationError({
+                    "assigned_to": f"Employee {assigned_to.full_name} already has an active task assigned on {scheduled_date}. Please select another date or another employee."
+                })
+                
+        return data
+
 
 # ==========================================
 # MAINTENANCE TASK SERIALIZER

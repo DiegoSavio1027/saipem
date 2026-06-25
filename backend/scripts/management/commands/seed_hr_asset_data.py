@@ -5,6 +5,7 @@ from asset_module.models import Vessel, Asset, MaintenanceTask, InventoryItem, M
 from hr_module.models import Roster, VesselActivity, Position
 from hse_module.hse_pob.models import WorkLocation
 from django.contrib.auth.models import User, Group
+from hse_module.hse_ptw.models import PermitToWork
 
 
 
@@ -835,7 +836,8 @@ class Command(BaseCommand):
                 'priority': 'MEDIUM',
                 'status': 'PENDING',
                 'scheduled_date': date.today() + timedelta(days=1),
-                'created_by': 'chief_engineer_s7000'
+                'created_by': 'chief_engineer_s7000',
+                'assigned_to': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-002',
@@ -844,9 +846,10 @@ class Command(BaseCommand):
                 'asset_id': 'AST-005', # Pipe Laying Tensioner
                 'description': 'Pipe Laying Tensioner Maintenance - Painting and rust prevention',
                 'priority': 'MEDIUM',
-                'status': 'PENDING',
-                'scheduled_date': date.today() + timedelta(days=2),
-                'created_by': 'chief_engineer_s7000'
+                'status': 'COMPLETED',
+                'scheduled_date': date.today() - timedelta(days=2),
+                'created_by': 'chief_engineer_s7000',
+                'assigned_to': 'worker'
             },
             {
                 'wo_id': 'WO-2024-003',
@@ -868,7 +871,8 @@ class Command(BaseCommand):
                 'priority': 'HIGH',
                 'status': 'IN_PROGRESS',
                 'scheduled_date': date.today() + timedelta(days=1),
-                'created_by': 'chief_engineer_s7000'
+                'created_by': 'chief_engineer_s7000',
+                'assigned_to': 'worker'
             },
             {
                 'wo_id': 'WO-2024-005',
@@ -879,7 +883,8 @@ class Command(BaseCommand):
                 'priority': 'MEDIUM',
                 'status': 'IN_PROGRESS',
                 'scheduled_date': date.today(),
-                'created_by': 'chief_engineer_s7000'
+                'created_by': 'chief_engineer_s7000',
+                'assigned_to': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-006',
@@ -888,9 +893,10 @@ class Command(BaseCommand):
                 'asset_id': None,
                 'description': 'Electrical Isolation - Generator switchboard and Main Generator B maintenance',
                 'priority': 'CRITICAL',
-                'status': 'PENDING',
-                'scheduled_date': date.today() + timedelta(days=5),
-                'created_by': 'chief_engineer_s7000'
+                'status': 'COMPLETED',
+                'scheduled_date': date.today() - timedelta(days=5),
+                'created_by': 'chief_engineer_s7000',
+                'assigned_to': 'chief_engineer_s7000'
             },
             {
                 'wo_id': 'WO-2024-007',
@@ -996,7 +1002,14 @@ class Command(BaseCommand):
                 if wo_data['machinery_serial']:
                     machinery = MachineryEquipment.objects.get(serial_number=wo_data['machinery_serial'])
                 
-                wo, created = WorkOrder.objects.get_or_create(
+                assigned_to_emp = None
+                if wo_data.get('assigned_to'):
+                    try:
+                        assigned_to_emp = Employee.objects.get(emp_id=wo_data['assigned_to'])
+                    except Employee.DoesNotExist:
+                        pass
+                
+                wo, created = WorkOrder.objects.update_or_create(
                     wo_id=wo_data['wo_id'],
                     defaults={
                         'vessel': vessel,
@@ -1006,17 +1019,93 @@ class Command(BaseCommand):
                         'priority': wo_data['priority'],
                         'status': wo_data['status'],
                         'scheduled_date': wo_data['scheduled_date'],
-                        'created_by': wo_data['created_by']
+                        'created_by': wo_data['created_by'],
+                        'assigned_to': assigned_to_emp
                     }
                 )
                 if created:
                     self.stdout.write(f"✓ Created work order: {wo.wo_id} ({wo.priority}) on {vessel.vessel_name}")
                 else:
-                    self.stdout.write(f"- Work order already exists: {wo.wo_id}")
+                    self.stdout.write(f"✓ Updated work order: {wo.wo_id}")
             except (KeyError, Asset.DoesNotExist, MachineryEquipment.DoesNotExist) as e:
                 self.stdout.write(self.style.WARNING(f"⚠ Error creating work order {wo_data['wo_id']}: {str(e)}"))
 
         self.stdout.write(f"\n✓ Total work orders: {WorkOrder.objects.count()}")
+
+        # STEP 11: Create Permit to Works
+        self.stdout.write("\n[11/11] Creating Permit To Works...")
+        
+        # Link to specific Work Orders
+        ptw_data_list = [
+            {
+                'permit_id': 'HW-240626-0001',
+                'vessel_name': 'Saipem 7000',
+                'emp_id': 'worker',
+                'wo_id': 'WO-2024-004', # Welding repair
+                'permit_type': 'HOT_WORK',
+                'status': 'APPROVED',
+                'approved_by': 'Diego Savio',
+                'assigned_personnel': ['worker'],
+                'is_toolbox_talk_done': True
+            },
+            {
+                'permit_id': 'WAH-240626-0002',
+                'vessel_name': 'Saipem 7000',
+                'emp_id': 'chief_engineer_s7000',
+                'wo_id': 'WO-2024-005', # Working at Height
+                'permit_type': 'WORKING_AT_HEIGHT',
+                'status': 'PENDING',
+                'assigned_personnel': ['chief_engineer_s7000']
+            },
+            {
+                'permit_id': 'IC-240626-0003',
+                'vessel_name': 'Saipem 7000',
+                'emp_id': 'chief_engineer_s7000',
+                'wo_id': 'WO-2024-006', # Isolation
+                'permit_type': 'ISOLATION',
+                'status': 'CLOSED',
+                'approved_by': 'Diego Savio',
+                'closed_by': 'Diego Savio',
+                'assigned_personnel': ['chief_engineer_s7000']
+            }
+        ]
+
+        for ptw_data in ptw_data_list:
+            try:
+                vessel = vessels[ptw_data['vessel_name']]
+                wo = WorkOrder.objects.get(wo_id=ptw_data['wo_id'])
+                
+                ptw, created = PermitToWork.objects.update_or_create(
+                    permit_id=ptw_data['permit_id'],
+                    defaults={
+                        'vessel': vessel,
+                        'emp_id': ptw_data['emp_id'],
+                        'wo_id': wo,
+                        'permit_type': ptw_data['permit_type'],
+                        'status': ptw_data['status'],
+                        'approved_by': ptw_data.get('approved_by', ''),
+                        'closed_by': ptw_data.get('closed_by', ''),
+                        'is_toolbox_talk_done': ptw_data.get('is_toolbox_talk_done', False),
+                    }
+                )
+                
+                # Assign personnel
+                if 'assigned_personnel' in ptw_data:
+                    for emp_code in ptw_data['assigned_personnel']:
+                        try:
+                            emp = Employee.objects.get(emp_id=emp_code)
+                            ptw.assigned_personnel.add(emp)
+                        except Employee.DoesNotExist:
+                            pass
+                
+                if created:
+                    self.stdout.write(f"✓ Created PTW: {ptw.permit_id} ({ptw.status})")
+                else:
+                    self.stdout.write(f"✓ Updated PTW: {ptw.permit_id}")
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"⚠ Error creating PTW {ptw_data['permit_id']}: {str(e)}"))
+
+        self.stdout.write(f"\n✓ Total PTWs: {PermitToWork.objects.count()}")
 
         # SUMMARY
         self.stdout.write("\n" + "=" * 70)
@@ -1032,5 +1121,6 @@ class Command(BaseCommand):
         self.stdout.write(f"✓ Maintenance Tasks: {MaintenanceTask.objects.count()}")
         self.stdout.write(f"✓ Machinery Equipment: {MachineryEquipment.objects.count()}")
         self.stdout.write(f"✓ Work Orders: {WorkOrder.objects.count()}")
+        self.stdout.write(f"✓ Permit To Works: {PermitToWork.objects.count()}")
         self.stdout.write("=" * 70)
         self.stdout.write(self.style.SUCCESS("🚀 Ready for testing!"))
