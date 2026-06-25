@@ -1,4 +1,6 @@
-<template>
+import sys
+
+content = """<template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
     <DialogContent class="max-w-2xl">
       <DialogHeader>
@@ -469,3 +471,7 @@ const handleSubmit = async () => {
   }
 };
 </script>
+"""
+
+with open("/Users/septiandwica/Documents/President University/saipem-hse/frontend/src/components/IncidentReportForm.vue", "w") as f:
+    f.write(content)

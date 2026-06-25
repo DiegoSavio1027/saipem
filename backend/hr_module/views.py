@@ -50,6 +50,11 @@ def delete_position(request, pk):
 @api_view(['GET'])
 def get_all_employees(request):
     employees = Employee.objects.exclude(job_role__in=['Admin', 'HR Staff'])
+    
+    vessel_id = request.query_params.get('vessel_id')
+    if vessel_id:
+        employees = employees.filter(rosters__vessel_id=vessel_id).distinct()
+        
     serializer = EmployeeSerializer(employees, many=True)
     return Response(serializer.data)
 

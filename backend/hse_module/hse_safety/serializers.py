@@ -158,12 +158,22 @@ class IncidentReportSerializer(serializers.Serializer):
     reported_by = serializers.CharField(max_length=50)
     incident_date = serializers.DateTimeField()
     proof_image = serializers.ImageField(required=False, allow_null=True)
+    vessel_id = serializers.CharField(max_length=50, required=False, allow_null=True, allow_blank=True)
 
     def create(self, validated_data):
         """Create incident dan update system status"""
         location_id = validated_data.pop('location')
         location = WorkLocation.objects.get(id=location_id)
         validated_data['location'] = location
+
+        vessel_id = validated_data.pop('vessel_id', None)
+        if vessel_id:
+            from asset_module.models import Vessel
+            try:
+                vessel = Vessel.objects.get(asset_id=vessel_id)
+                validated_data['vessel'] = vessel
+            except Vessel.DoesNotExist:
+                pass
 
         # Determine initial status based on reporter role
         from hr_module.models import Employee
