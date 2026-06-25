@@ -101,18 +101,18 @@ sequenceDiagram
 
 | Aktor / Role | Cakupan Akses & UI | Tanggung Jawab Utama |
 | :--- | :--- | :--- |
-| **System Administrator (Admin IT)** | Registry Kapal, Pengaturan Deck, Manajemen User | Mendaftarkan kapal baru, menentukan area deck beserta tingkat risikonya, mengelola akun user. |
-| **HR Administrator** | Registrasi Personel (Crew), MCU, Sertifikasi, Roster Matrix | Mengelola data karyawan, memperbarui status MCU (FIT/UNFIT), menginput sertifikasi keahlian, menugaskan kru ke jadwal roster kapal. |
-| **Chief Engineer / Supervisor Teknis** | Monitoring Mesin & Sparepart, Modul Work Order | Melaporkan kerusakan alat mekanis/listrik di kapal, menerbitkan Work Order (WO) perbaikan peralatan. |
-| **Safety Officer (HSE Lead)** | Approval PTW, Monitor POB, Emergency Control (Condition Red) | Melakukan audit aspek K3, menandatangani persetujuan izin kerja (PTW), memantau manifes orang di kapal secara real-time, mengaktifkan status darurat. |
-| **Offshore Worker / Teknisi** | Pembuatan PTW, Melakukan Toolbox Talk (TBT), Check-in/out POB | Mengajukan izin kerja PTW untuk perbaikan alat, melakukan briefing keselamatan sebelum bekerja, check-in/out saat masuk area deck. |
+| **Admin / System Administrator** | Registry Kapal, Pengaturan Deck, Manajemen User | Mendaftarkan kapal baru, menentukan area deck beserta tingkat risikonya, mengelola akun user. |
+| **HR Staff** | Registrasi Personel (Crew), MCU, Sertifikasi, Roster Matrix | Mengelola data karyawan, memperbarui status MCU (FIT/UNFIT), menginput sertifikasi keahlian, menugaskan kru ke jadwal roster kapal. |
+| **Chief Engineer** | Monitoring Mesin & Inventory, Modul Work Order | Melaporkan kerusakan alat mekanis/listrik di kapal, mengelola stok inventaris terpadu, menerbitkan Work Order (WO) perbaikan peralatan. |
+| **Safety Officer** | Approval PTW, Monitor POB, Emergency Control (Condition Red) | Melakukan audit aspek K3, menandatangani persetujuan izin kerja (PTW), memantau manifes orang di kapal secara real-time, mengaktifkan status darurat. |
+| **Worker (Offshore Crew)** | Pembuatan PTW, Melakukan Toolbox Talk (TBT), Check-in/out POB | Mengajukan izin kerja PTW untuk perbaikan alat, melakukan briefing keselamatan sebelum bekerja, check-in/out saat masuk area deck. |
 
 ---
 
 ## 3. Detail Flow Operasional (Langkah Demi Langkah)
 
 ### Langkah 1: Manajemen Akun & Hak Akses (User Management)
-*   **Aktor**: Admin IT / System Administrator.
+*   **Aktor**: Admin / System Administrator.
 *   **Alur Frontend (FE)**:
     1.  Admin membuka halaman **User Management** ([UserManagementView.vue](frontend/src/views/admin/UserManagementView.vue)) untuk mengelola pengguna.
     2.  Admin mengklik **Add User** untuk mendaftarkan akun baru, mengisi form (Username, Password, Name, Email, Role, dan Job Title), lalu mengirimkan data.
@@ -124,7 +124,7 @@ sequenceDiagram
 *   **Hasil Akhir**: Akun pengguna terdaftar di sistem dengan hak akses modul yang sesuai perannya.
 
 ### Langkah 2: Registrasi Master Data Kapal & Deck
-*   **Aktor**: Admin IT / System Administrator.
+*   **Aktor**: Admin / System Administrator.
 *   **Alur Frontend (FE)**:
     1.  Admin membuka menu **Vessel Registry** ([VesselRegistryView.vue](frontend/src/views/admin/VesselRegistryView.vue)) untuk menambahkan kapal (contoh: *Saipem 7000*).
     2.  Admin membuka menu **Deck Location** ([WorkLocationView.vue](frontend/src/views/WorkLocationView.vue)) untuk mendaftarkan deck compartments (contoh: *Engine Room, Heli Deck*) beserta tingkat bahayanya (Low/Medium/High).
@@ -135,7 +135,7 @@ sequenceDiagram
 *   **Hasil Akhir**: Kapal dan area deck terdaftar di database dan siap digunakan oleh departemen lain.
 
 ### Langkah 3: Registrasi Karyawan, MCU & Sertifikasi Kompetensi
-*   **Aktor**: HR Administrator.
+*   **Aktor**: HR Staff.
 *   **Alur Frontend (FE)**:
     1.  HR membuka halaman **Personnel Registry** ([PersonnelView.vue](frontend/src/views/hr/PersonnelView.vue)).
     2.  HR mendaftarkan kru baru beserta status MCU-nya (`FIT` / `UNFIT` / `EXPIRED`).
@@ -147,7 +147,7 @@ sequenceDiagram
 *   **Hasil Akhir**: JOHN DOE terdaftar sebagai personel aktif dengan status medis `FIT` dan bersertifikat keselamatan `HOT_WORK`.
 
 ### Langkah 4: Penjadwalan Roster Rotasi Kapal
-*   **Aktor**: HR Administrator.
+*   **Aktor**: HR Staff.
 *   **Alur Frontend (FE)**:
     1.  HR membuka menu **Roster Matrix** ([RosterView.vue](frontend/src/views/hr/RosterView.vue)).
     2.  HR memilih kapal *Saipem 7000* dan mengalokasikan John Doe untuk jadwal rotasi kerja (Roster) dari tanggal `01 Juni` hingga `30 Juni 2026`.
@@ -158,7 +158,7 @@ sequenceDiagram
 *   **Hasil Akhir**: John Doe resmi terdaftar sebagai kru aktif kapal *Saipem 7000* untuk periode Juni 2026.
 
 ### Langkah 5: Pemantauan IoT Telemetri & Pembuatan Perintah Kerja (Predictive Maintenance & Work Order)
-*   **Aktor**: Chief Engineer / Technical Supervisor.
+*   **Aktor**: Chief Engineer.
 *   **Alur Frontend (FE)**:
     1.  Chief Engineer membuka halaman **Machinery & Equip** ([MachineryView.vue](frontend/src/views/MachineryView.vue)).
     2.  Halaman menampilkan status kesehatan real-time untuk setiap mesin (seperti *Generator B, Pompa Utama*) yang dikunci otomatis untuk kapalnya hari ini.
@@ -171,7 +171,7 @@ sequenceDiagram
 *   **Hasil Akhir**: Perintah perbaikan generator terbit akibat deteksi dini kerusakan (predictive maintenance) dan siap dikaitkan dengan permohonan PTW.
 
 ### Langkah 6: Pengajuan Izin Kerja Aman (Permit to Work - PTW)
-*   **Aktor**: Offshore Worker (John Doe) atau Technical Supervisor.
+*   **Aktor**: Worker (Offshore Crew) atau Chief Engineer.
 *   **Alur Frontend (FE)**:
     1.  John Doe masuk ke aplikasi. Karena John Doe adalah Aktor *Worker*, sistem **secara otomatis mendeteksi dan mengunci kapal** tempat ia ditugaskan hari ini (*Saipem 7000*) berdasarkan data `assigned_vessel` dari HR saat proses login. John Doe tidak perlu (dan tidak bisa) memilih kapal secara manual di Topbar (fitur ganti kapal di [Topbar.vue](frontend/src/components/layout/Topbar.vue) hanya tersedia untuk Aktor *Admin*).
     2.  John Doe membuka **Permit List** ([PtwView.vue](frontend/src/views/PtwView.vue)) dan mengklik **Create Permit**.
@@ -219,7 +219,7 @@ sequenceDiagram
 *   **Hasil Akhir**: Pekerjaan dimulai, status WO ter-update, dan data John Doe beserta kru otomatis muncul di Dashboard Live POB kapal sebagai kru aktif di area Engine Room.
 
 ### Langkah 9: Penutupan Izin Kerja & POB Check-out
-*   **Aktor**: Offshore Worker & Safety Officer.
+*   **Aktor**: Worker (Offshore Crew) & Safety Officer.
 *   **Alur Frontend (FE)**:
     1.  Pekerjaan selesai. John Doe memasukkan catatan penyelesaian kerja dan menekan tombol **Mark as Done** (mengirim request ke `/api/v1/hse/ptw/<id>/mark_done/`).
     2.  Safety Officer melakukan inspeksi fisik ke Engine Room untuk memastikan area aman dari bahaya sisa pengelasan.
