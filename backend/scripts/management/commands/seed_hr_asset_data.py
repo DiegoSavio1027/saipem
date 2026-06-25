@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from datetime import date, timedelta
 from hr_module.models import Employee
 from asset_module.models import Vessel, Asset, MaintenanceTask, InventoryItem, MachineryEquipment, WorkOrder
-from hr_module.models import Roster, VesselActivity, Position
+from hr_module.models import Roster, VesselActivity, Position, Certification
 from hse_module.hse_pob.models import WorkLocation
 from django.contrib.auth.models import User, Group
 from hse_module.hse_ptw.models import PermitToWork
@@ -209,6 +209,32 @@ class Command(BaseCommand):
                 user.profile.save()
 
         self.stdout.write(f"\n✓ Total employees: {Employee.objects.count()}")
+
+        # STEP 1.5: Certifications
+        self.stdout.write("\n[1.5/8] Creating Certifications...")
+        certifications_data = [
+            {'cert_id': 'CERT-BOSIET-001', 'cert_type': 'BOSIET', 'employee': 'worker', 'expiry_date': '2027-01-01'},
+            {'cert_id': 'CERT-HUET-001', 'cert_type': 'HUET', 'employee': 'worker', 'expiry_date': '2027-01-01'},
+            {'cert_id': 'CERT-BOSIET-002', 'cert_type': 'BOSIET', 'employee': 'EMP-005', 'expiry_date': '2027-01-01'},
+            {'cert_id': 'CERT-WELDING-001', 'cert_type': '6G Welding', 'employee': 'EMP-005', 'expiry_date': '2028-01-01'},
+            {'cert_id': 'CERT-BOSIET-003', 'cert_type': 'BOSIET', 'employee': 'chief_engineer_s7000', 'expiry_date': '2028-01-01'},
+            {'cert_id': 'CERT-BOSIET-004', 'cert_type': 'BOSIET', 'employee': 'safety_officer_s7000', 'expiry_date': '2028-01-01'},
+            {'cert_id': 'CERT-NEBOSH-001', 'cert_type': 'NEBOSH IGC', 'employee': 'safety_officer_s7000', 'expiry_date': '2030-01-01'},
+            {'cert_id': 'CERT-BOSIET-005', 'cert_type': 'BOSIET', 'employee': 'chief_engineer_castorone', 'expiry_date': '2028-01-01'},
+            {'cert_id': 'CERT-BOSIET-006', 'cert_type': 'BOSIET', 'employee': 'safety_officer_castorone', 'expiry_date': '2028-01-01'},
+        ]
+        
+        for cert in certifications_data:
+            emp = Employee.objects.get(emp_id=cert['employee'])
+            Certification.objects.update_or_create(
+                cert_id=cert['cert_id'],
+                defaults={
+                    'cert_type': cert['cert_type'],
+                    'employee': emp,
+                    'expiry_date': cert['expiry_date']
+                }
+            )
+        self.stdout.write(f"✓ Total certifications: {Certification.objects.count()}")
 
         # STEP 2: Create Vessels (IMPORTANT: Must create before Assets!)
         self.stdout.write("\n[2/8] Creating Vessels...")
@@ -823,6 +849,7 @@ class Command(BaseCommand):
         # STEP 10: Create Work Orders (linked to Vessel, Asset, and Machinery)
         self.stdout.write("\n[10/10] Creating Work Orders...")
         # Clear existing work orders to prevent duplicate key/conflict errors
+        PermitToWork.objects.all().delete()
         WorkOrder.objects.all().delete()
 
         work_orders_data = [

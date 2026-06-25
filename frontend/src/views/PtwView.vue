@@ -124,6 +124,15 @@
     @update:open="deleteDialogOpen = $event"
     @confirm="confirmDelete"
   />
+
+  <ToolboxTalkDialog
+    :open="toolboxTalkDialogOpen"
+    :permit-id="selectedPTW?.permit_id || ''"
+    :ptw-id="selectedPTWId || 0"
+    :ptw="selectedPTW"
+    @update:open="toolboxTalkDialogOpen = $event"
+    @confirm="handleStartWorkConfirmed"
+  />
 </template>
 
 <script setup>
@@ -141,6 +150,7 @@ import ConfirmCloseDialog from '@/components/ptw-dialogs/ConfirmCloseDialog.vue'
 import MarkDoneDialog from '@/components/ptw-dialogs/MarkDoneDialog.vue';
 import EditPTWDialog from '@/components/ptw-dialogs/EditPTWDialog.vue';
 import DeleteConfirmDialog from '@/components/ptw-dialogs/DeleteConfirmDialog.vue';
+import ToolboxTalkDialog from '@/components/ptw-dialogs/ToolboxTalkDialog.vue';
 import { authState, getAccessToken } from '@/store/auth';
 import { getCsrfToken } from '@/utils/csrf';
 import { toast } from 'vue-sonner';
@@ -161,6 +171,7 @@ const confirmCloseDialogOpen = ref(false);
 const markDoneDialogOpen = ref(false);
 const editDialogOpen = ref(false);
 const deleteDialogOpen = ref(false);
+const toolboxTalkDialogOpen = ref(false);
 
 const selectedPTW = ref(null);
 const selectedPTWId = ref(null);
@@ -201,6 +212,11 @@ const columns = createColumns(authState, {
       selectedPTWId.value = id;
       markDoneDialogOpen.value = true;
     }
+  },
+  onStartWork: (ptw_obj) => {
+    selectedPTW.value = ptw_obj;
+    selectedPTWId.value = ptw_obj.id;
+    toolboxTalkDialogOpen.value = true;
   },
   onEdit: (ptw) => editPTW(ptw),
   onDelete: (id) => deletePTW(id),
@@ -455,6 +471,44 @@ const confirmClosePTW = async (closing_notes) => {
     } catch (error) {
         console.error("Failed to Confirm Close:", error);
         toast.error("Error", { description: "Server connection failed." });
+    }
+};
+
+const handleStartWorkConfirmed = async (payload) => {
+    const { ptwId, ...jsaTbtData } = payload;
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/hse/ptw/${ptwId}/start_work/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken() || '',
+                'Authorization': `Bearer ${getAccessToken()}`
+            },
+            body: JSON.stringify(jsaTbtData)
+        });
+
+        if (response.ok) {
+            fetchPtw();
+            toast.success("Success", { description: "Work started successfully. Pre-job checks saved and crew checked in." });
+        } else {
+            const error = await response.json();
+            toast.error("Failed", { description: error.error || "Failed to start work." });
+        }
+    } catch (error) {
+        console.error("Error starting work, queuing offline:", error);
+        
+        addToQueue('START_WORK', `${API_BASE_URL}/hse/ptw/${ptwId}/start_work/`, jsaTbtData, {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'X-CSRFToken': getCsrfToken() || ''
+        });
+
+        // Update local status of the permit
+        const ptw = ptwList.value.find(p => p.id === ptwId);
+        if (ptw) {
+            ptw.status = 'IN_PROGRESS';
+            ptw.status_display = 'In Progress (Queued)';
+        }
     }
 };
 

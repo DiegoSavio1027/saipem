@@ -36,13 +36,16 @@
         
         <div class="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
           <div v-for="(label, key) in ppeItems" :key="key" class="flex items-center space-x-3 py-1">
-            <Checkbox :id="key" v-model:checked="jsaData.ppeChecked[key]" />
+            <Checkbox :id="key" v-model="jsaData.ppeChecked[key]" />
             <Label :for="key" class="text-xs font-medium cursor-pointer">{{ label }}</Label>
           </div>
         </div>
+        <p class="text-[10px] text-red-500 font-semibold" v-if="currentStep === 1 && (!jsaData.ppeChecked.helmet || !jsaData.ppeChecked.boots || !jsaData.ppeChecked.gloves)">
+            * You must verify that at least Safety Helmet, Steel-Toe Boots, and Work Gloves are available to proceed.
+        </p>
 
         <div class="flex items-start space-x-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-900/50">
-          <Checkbox id="loto" v-model:checked="jsaData.lotoApplied" />
+          <Checkbox id="loto" v-model="jsaData.lotoApplied" />
           <div class="grid gap-1">
             <Label for="loto" class="text-xs font-semibold text-amber-900 dark:text-amber-400 cursor-pointer">Lockout / Tagout (LOTO) Applied</Label>
             <p class="text-[10px] text-amber-700 dark:text-amber-500">Check this if the job requires equipment energy isolation and LOTO devices have been secured.</p>
@@ -83,7 +86,7 @@
             <!-- Crew members -->
             <div v-for="member in crewList" :key="member.emp_id" class="flex items-center justify-between p-2.5">
               <span class="text-xs text-slate-800 dark:text-slate-200">{{ member.full_name }} (Crew)</span>
-              <Checkbox :id="'att-' + member.emp_id" v-model:checked="attendance[member.emp_id]" />
+              <Checkbox :id="'att-' + member.emp_id" v-model="attendance[member.emp_id]" />
             </div>
           </div>
         </div>
@@ -108,7 +111,7 @@
         </div>
 
         <div class="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900/50">
-          <Checkbox id="tbt-declared" v-model:checked="tbtDeclared" />
+          <Checkbox id="tbt-declared" v-model="tbtDeclared" />
           <Label for="tbt-declared" class="text-[10px] leading-tight text-blue-900 dark:text-blue-400 font-semibold cursor-pointer">
             We declare that we have attended the Toolbox Talk briefing, understood the identified hazards, and commit to following safe work protocols.
           </Label>

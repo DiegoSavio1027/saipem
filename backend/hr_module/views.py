@@ -201,7 +201,8 @@ def payroll_calculation(request):
         end_of_month = datetime.date(year, month + 1, 1) - datetime.timedelta(days=1)
 
     payroll_data = []
-    employees = Employee.objects.all()
+    # Exclude non-offshore roles from payroll
+    employees = Employee.objects.exclude(job_role__in=['Admin', 'HR Staff', 'System Administrator'])
 
     for emp in employees:
         emp_rosters = Roster.objects.filter(

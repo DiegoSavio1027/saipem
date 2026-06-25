@@ -22,7 +22,7 @@ export interface PTW {
     job_role: string
   }
   assigned_crew?: any[]
-  status: 'PENDING' | 'APPROVED' | 'WAITING_FOR_CLOSE' | 'REJECTED' | 'CLOSED'
+  status: 'PENDING' | 'APPROVED' | 'IN_PROGRESS' | 'WAITING_FOR_CLOSE' | 'REJECTED' | 'CLOSED'
   status_display?: string
   created_at?: string
 }
@@ -35,6 +35,7 @@ export const createColumns = (
     onReject: (id: number) => void
     onConfirmClose: (id: number) => void
     onMarkDone: (id: number) => void
+    onStartWork: (row: PTW) => void
     onEdit: (row: PTW) => void
     onDelete: (id: number) => void
   }
@@ -190,6 +191,14 @@ export const createColumns = (
       // Worker actions
       if (authState.userRole === 'Worker' && ptw.emp_id === authState.username) {
         if (ptw.status === 'APPROVED') {
+          buttons.push(
+            h(Button, {
+              size: 'sm',
+              class: 'h-8 px-3 text-xs bg-[var(--color-saipem-tertiary)] hover:bg-orange-600 text-white ml-2',
+              onClick: () => actions.onStartWork(ptw)
+            }, () => 'Start Work')
+          )
+        } else if (ptw.status === 'IN_PROGRESS') {
           buttons.push(
             h(Button, {
               size: 'sm',
