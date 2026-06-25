@@ -43,13 +43,14 @@ Sistem ini dioperasikan berdasarkan jabatan. Berikut adalah detail alur aplikasi
    * Memantau status kesehatan (Medical Check Up) setiap pekerja. Jika status pekerja adalah `EXPIRED` atau `UNFIT`, HR Staff menahan mereka di darat (*Off-Board*) untuk mencegah pekerja sakit beroperasi di lapangan.
 
 ### ⚙️ 3. Role: Chief Engineer (Kepala Teknisi Mesin)
-**Kapasitas:** Bertanggung jawab penuh atas pengelolaan aset kapal (mesin/peralatan) dan jadwal *Maintenance*.
-* **Predictive Monitoring (Business Flow)**:
-   * Login ke modul Aset (`/assets`). Chief Engineer memantau daftar mesin.
-   * Sistem secara cerdas menghitung sisa waktu berdasarkan *Operating Hours*. Jika batas waktu perawatan hampir habis, sistem akan menyorot alat tersebut dengan peringatan merah (*Needs Maintenance*).
-* **Pembuatan Work Order (Form Data)**:
-   * Chief Engineer menekan tombol **Create Work Order**. Ia mengatur jadwal (`scheduled_date`), prioritas (`HIGH`/`CRITICAL`), dan deskripsi pekerjaan.
-   * *Work Order* ini di-*publish* ke sistem operasional untuk diambil oleh tim Worker.
+**Kapasitas:** Bertanggung jawab penuh atas pengelolaan aset kapal, inventaris, dan jadwal *Maintenance*.
+* **IoT Predictive Monitoring (Business Flow)**:
+   * Login ke modul Aset (`/assets`). Chief Engineer memantau daftar mesin terhubung **IoT Telemetry Streaming**.
+   * Grafik *real-time* menampilkan suhu dan getaran mesin. Jika melampaui batas kritis, sistem akan menyorot alat tersebut dengan peringatan merah (*Needs Maintenance*).
+* **Pembuatan Work Order & Auto-Booking Inventory (Form Data)**:
+   * Chief Engineer menekan tombol **Create Work Order** dan menambahkan kebutuhan material dari **Inventory Terpadu**.
+   * *Otomatisasi Sistem*: Sistem melakukan **Smart Inventory Reservation**, yaitu mencadangkan (*booking*) jumlah stok secara logis, memastikan material aman dari WO lain tanpa memotong fisik sebelum eksekusi selesai.
+   * *Work Order* di-*publish* ke sistem operasional untuk dieksekusi.
 
 ### 🦺 4. Role: Safety Officer (Pengendali Keselamatan / HSE)
 **Kapasitas:** Bertugas memastikan bahwa semua *Work Order* dieksekusi dengan aman tanpa mengancam nyawa.
@@ -63,7 +64,7 @@ Sistem ini dioperasikan berdasarkan jabatan. Berikut adalah detail alur aplikasi
 * **Protokol Darurat "Emergency Lockdown"**:
    * Jika ada kebakaran, Officer mengaktifkan status "CONDITION RED". **Aplikasi seketika membekukan seluruh fitur pengajuan Izin Kerja**. Layar beralih mode merah dan memaksa kru memantau *Live POB* guna mengatur prioritas area evakuasi.
 
-### 👷‍♂️ 5. Role: Worker (Pekerja Lapangan / Teknisi)
+### 👷‍♂️ 5. Role: Worker (Offshore Crew / Pekerja Lapangan)
 **Kapasitas:** Mengeksekusi pekerjaan fisik di lapangan berdasarkan *Work Order*.
 * **Cek Tugas (UI Flow)**: Login (diarahkan ke `/hse`). Worker mengecek daftar *Work Order* yang di-assign untuknya hari itu.
 * **Pembuatan Izin Kerja / PTW**:
@@ -80,9 +81,9 @@ Sistem ini dioperasikan berdasarkan jabatan. Berikut adalah detail alur aplikasi
 ### 🌟 Kesimpulan: "Siklus Kehidupan" (The Life Cycle) Sistem
 
 Sistem SAIPEM UOS ini adalah sebuah rantai operasi yang kuat dan anti-bocor:
-1. **Admin** membuat fondasi data kapal dan profil penggunanya.
-2. **HR Staff** memfilter pekerja, memastikan hanya pekerja "Sehat" dan sedang bertugas (*On-board*) yang memiliki akses ke dalam sistem kerja.
-3. **Chief Engineer** mengidentifikasi aset kapal yang butuh perawatan dan merilis instruksi kerja (*Work Order*).
-4. **Worker** melihat *Work Order* tersebut, lalu merilis Permohonan Izin Kerja (*PTW*) ke sistem.
-5. **Safety Officer** memantau radar keamanan, memberikan Izin (*Approve*), dan melacak setiap jengkal pergerakan Worker yang sedang bekerja (*Live POB Check-In*).
-6. Pekerjaan selesai, **Worker** *Check-Out* secara otomatis, **Safety Officer** menutup dokumen permanen, dan seluruh data diarsip selamanya untuk keperluan analitik serta audit perusahaan.
+1. **Admin** membuat fondasi data kapal, struktur *Deck Location*, dan otorisasi *Role* akun pengguna.
+2. **HR Staff** memfilter pekerja, memastikan hanya kru "Sehat" (MCU *Fit*) dan sedang bertugas (*On-board*) yang dapat mengakses modul HSE.
+3. **Chief Engineer** memantau *IoT Telemetry*, merilis *Work Order*, dan memesan (*Reserve*) stok inventaris secara otomatis.
+4. **Worker** melihat *Work Order* miliknya, lalu merilis Permohonan Izin Kerja (*PTW*) ke sistem untuk divalidasi.
+5. **Safety Officer** memastikan lokasi aman, memberikan Izin (*Approve* PTW), dan melacak setiap jengkal pergerakan Worker yang sedang bekerja melalui *Live POB Check-In*.
+6. Pekerjaan selesai, **Worker** *Check-Out* secara otomatis dari area bahaya. **Safety Officer** melakukan verifikasi dan menutup (Close) izin kerja, memicu **Sistem memotong (*Auto-Deduct*) stok inventaris secara fisik dan mengubah status Work Order menjadi *COMPLETED***. Seluruh data transaksi diarsip abadi.
