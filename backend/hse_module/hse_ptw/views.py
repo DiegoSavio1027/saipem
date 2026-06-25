@@ -469,11 +469,13 @@ class PermitToWorkViewSet(viewsets.ModelViewSet):
         ptw.closing_notes = closing_notes
         ptw.save()
 
-        # Phase 5 Integration: Update WorkOrder Status
+        # Phase 5 Integration: Update WorkOrder to WAITING_REVIEW
+        # Inventory deduction happens only when CE explicitly marks WO as COMPLETED
         if ptw.wo_id:
-            ptw.wo_id.status = 'COMPLETED'
-            ptw.wo_id.completion_date = timezone.now().date()
-            ptw.wo_id.save()
+            wo = ptw.wo_id
+            if wo.status not in ('COMPLETED', 'WAITING_REVIEW'):
+                wo.status = 'WAITING_REVIEW'
+                wo.save()
 
         # Broadcast PTW closed event
         try:

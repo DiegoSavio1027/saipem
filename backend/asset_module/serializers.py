@@ -138,10 +138,23 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_asset_assigned_decks(self, obj):
+        # Priority 1: WO has a direct asset link
         if obj.asset:
             return [
                 {'id': deck.id, 'deck_name': deck.deck_name, 'risk_level': deck.risk_level}
                 for deck in obj.asset.assigned_decks.all()
+            ]
+        # Priority 2: WO is linked to a machinery that has a parent asset
+        if obj.machinery and obj.machinery.asset:
+            return [
+                {'id': deck.id, 'deck_name': deck.deck_name, 'risk_level': deck.risk_level}
+                for deck in obj.machinery.asset.assigned_decks.all()
+            ]
+        # Priority 3: Fall back to all decks assigned to the vessel
+        if obj.vessel:
+            return [
+                {'id': deck.id, 'deck_name': deck.deck_name, 'risk_level': deck.risk_level}
+                for deck in obj.vessel.assigned_decks.all()
             ]
         return []
 

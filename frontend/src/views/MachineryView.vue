@@ -505,7 +505,7 @@ const confirmCreateWorkOrder = async () => {
       wo_id: wo_id,
       vessel: mac.vessel,
       machinery: mac.id,
-      asset: null,
+      asset: mac.asset || null,  // Inherit parent asset so deck locations are available for PTW
       description: `AUTO-GENERATED: Urgent predictive maintenance required for machinery "${mac.equipment_name}" S/N: ${mac.serial_number} due to abnormal sensor readings (Vibration: ${mac.vibration} mm/s, Temp: ${mac.temperature}°C).`,
       priority: 'CRITICAL',
       scheduled_date: new Date().toISOString().split('T')[0],

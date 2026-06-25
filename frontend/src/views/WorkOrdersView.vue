@@ -60,7 +60,17 @@
                   <span :class="['px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider', getStatusColor(wo.status)]">{{ wo.status }}</span>
                 </td>
                 <td class="px-6 py-4">{{ wo.scheduled_date }}</td>
-                <td class="px-6 py-4 flex gap-2">
+                <td class="px-6 py-4 flex gap-2 items-center">
+                  <!-- Complete WO: Chief Engineer finalizes work, triggers inventory deduction -->
+                  <button
+                    v-if="(authState.userRole === 'Admin' || authState.userRole === 'Chief Engineer') && wo.status === 'WAITING_REVIEW'"
+                    @click="completeWorkOrder(wo.wo_id)"
+                    class="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-black uppercase tracking-wider rounded transition"
+                    title="Verify & Complete Work Order — deducts inventory"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Complete WO
+                  </button>
                   <button v-if="authState.userRole === 'Admin' || authState.userRole === 'Chief Engineer'" @click="openEditModal(wo)" class="text-blue-500 hover:text-blue-700 p-1 border border-transparent hover:border-blue-200 hover:bg-blue-50/20 rounded transition" title="Edit Work Order">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                   </button>
@@ -184,6 +194,7 @@
             <select v-model="woForm.status" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--color-saipem-tertiary)]">
               <option value="PENDING">Pending</option>
               <option value="IN_PROGRESS">In Progress</option>
+              <option value="WAITING_REVIEW">Waiting Review (CE Verification)</option>
               <option value="COMPLETED">Completed</option>
               <option value="CANCELLED">Cancelled</option>
             </select>
@@ -520,6 +531,27 @@ const deleteWo = async (id) => {
   }
 }
 
+const completeWorkOrder = async (woId) => {
+  if (!confirm(`Complete Work Order ${woId}? This will permanently deduct all reserved inventory materials.`)) return
+  try {
+    const response = await fetch(`${API_BASE_URL}/asset/workorders/${woId}/complete/`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      const deducted = data.deducted_items?.map(i => `${i.item}: -${i.qty_deducted} (remaining: ${i.remaining_stock})`).join(', ') || 'No materials'
+      toast.success(`WO ${woId} Completed!`, { description: `Inventory deducted: ${deducted}` })
+      fetchWorkOrders()
+    } else {
+      const err = await response.json()
+      toast.error('Failed to complete WO', { description: err.error || 'Unknown error' })
+    }
+  } catch (error) {
+    toast.error('Network error completing WO')
+  }
+}
+
 const truncate = (text) => text && text.length > 50 ? text.substring(0, 50) + '...' : text
 
 const getPriorityColor = (priority) => {
@@ -536,6 +568,7 @@ const getStatusColor = (status) => {
   const map = {
     'PENDING': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
     'IN_PROGRESS': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+    'WAITING_REVIEW': 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
     'COMPLETED': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
     'CANCELLED': 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
   }

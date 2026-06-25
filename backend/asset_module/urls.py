@@ -26,6 +26,7 @@ urlpatterns = [
     path('workorders/', views.workorder_list, name='workorder_list'),
     path('workorders/<str:wo_id>/', views.workorder_detail, name='workorder_detail'),
     path('workorders/<str:wo_id>/add_material/', views.workorder_add_material, name='workorder_add_material'),
+    path('workorders/<str:wo_id>/complete/', views.complete_work_order, name='complete_work_order'),
 
     # ==========================================
     # MAINTENANCE TASK ENDPOINTS

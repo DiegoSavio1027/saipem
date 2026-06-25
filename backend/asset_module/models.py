@@ -99,6 +99,7 @@ class WorkOrder(models.Model):
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
         ('IN_PROGRESS', 'In Progress'),
+        ('WAITING_REVIEW', 'Waiting Review'),
         ('COMPLETED', 'Completed'),
         ('CANCELLED', 'Cancelled'),
     ]

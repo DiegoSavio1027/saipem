@@ -234,6 +234,52 @@ def workorder_detail(request, wo_id):
 
 
 @api_view(['POST'])
+def complete_work_order(request, wo_id):
+    """Chief Engineer completes a work order, triggering inventory auto-deduction.
+    WO must be in WAITING_REVIEW status (set after Safety Officer closes the linked PTW).
+    """
+    try:
+        workorder = WorkOrder.objects.get(wo_id=wo_id)
+    except WorkOrder.DoesNotExist:
+        return Response({"error": "Work order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if workorder.status != 'WAITING_REVIEW':
+        return Response(
+            {"error": f"Work order must be in WAITING_REVIEW status to complete. Current status: {workorder.status}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Auto-Deduct Inventory: cut physical stock and release reservation for all materials
+    deducted_items = []
+    for material in workorder.materials.all():
+        inv_item = material.inventory_item
+        if inv_item:
+            inv_item.current_stock -= material.quantity_used
+            inv_item.quantity_reserved -= material.quantity_used
+            if inv_item.current_stock < 0:
+                inv_item.current_stock = 0
+            if inv_item.quantity_reserved < 0:
+                inv_item.quantity_reserved = 0
+            inv_item.save()
+            deducted_items.append({
+                "item": inv_item.item_name,
+                "qty_deducted": material.quantity_used,
+                "remaining_stock": inv_item.current_stock
+            })
+
+    workorder.status = 'COMPLETED'
+    from django.utils import timezone
+    workorder.save()
+
+    serializer = WorkOrderSerializer(workorder)
+    return Response({
+        "message": f"Work Order {wo_id} completed. Inventory deducted.",
+        "deducted_items": deducted_items,
+        "work_order": serializer.data
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
 def workorder_add_material(request, wo_id):
     """Add spare part material to a work order"""
     try:
