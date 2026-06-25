@@ -1084,6 +1084,7 @@ class Command(BaseCommand):
                 'permit_type': 'HOT_WORK',
                 'status': 'APPROVED',
                 'approved_by': 'Diego Savio',
+                'deck_location': 'Engine Room',
                 'assigned_personnel': ['worker'],
                 'is_toolbox_talk_done': True
             },
@@ -1094,6 +1095,7 @@ class Command(BaseCommand):
                 'wo_id': 'WO-2024-005', # Working at Height
                 'permit_type': 'WORKING_AT_HEIGHT',
                 'status': 'PENDING',
+                'deck_location': 'Upper Deck',
                 'assigned_personnel': ['chief_engineer_s7000']
             },
             {
@@ -1105,6 +1107,7 @@ class Command(BaseCommand):
                 'status': 'CLOSED',
                 'approved_by': 'Diego Savio',
                 'closed_by': 'Diego Savio',
+                'deck_location': 'Machinery Space',
                 'assigned_personnel': ['chief_engineer_s7000']
             }
         ]
@@ -1113,6 +1116,7 @@ class Command(BaseCommand):
             try:
                 vessel = vessels[ptw_data['vessel_name']]
                 wo = WorkOrder.objects.get(wo_id=ptw_data['wo_id'])
+                deck_location = WorkLocation.objects.filter(deck_name=ptw_data.get('deck_location')).first()
                 
                 ptw, created = PermitToWork.objects.update_or_create(
                     permit_id=ptw_data['permit_id'],
@@ -1124,6 +1128,7 @@ class Command(BaseCommand):
                         'status': ptw_data['status'],
                         'approved_by': ptw_data.get('approved_by', ''),
                         'closed_by': ptw_data.get('closed_by', ''),
+                        'deck_location': deck_location,
                         'is_toolbox_talk_done': ptw_data.get('is_toolbox_talk_done', False),
                     }
                 )
